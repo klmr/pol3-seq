@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+jobname="$1"
+shift
+
+joblist="$(uuidgen)"
+if [[ $# -gt 0 ]]; then
+    inputs="$*"
+    ls $inputs > "$joblist"
+else
+    inputs="$(cat)"
+    echo "$inputs" > "$joblist"
+fi
+
+numjobs=$(wc -l < "$joblist")
+shortname="$(basename "$jobname" | sed 's/ //g')"
+
+echo >&2 "inputs:    $inputs"
+echo >&2 "jobname:   $jobname"
+echo >&2 "joblist:   $joblist"
+echo >&2 "numjobs:   $numjobs"
+echo >&2 "shortname: $shortname"
+
+mkdir -p logs
+
+PATH="$IRAP_PATH:$PATH" \
+    bsub -o "logs/$shortname-%J-%I.out" -J "$shortname[1-$numjobs]" \
+    -M 16000 -R 'rusage[mem=16000]' \
+    "$jobname $joblist \$LSB_JOBINDEX"
+
+bsub -w "done('"$shortname*"')" -J "finish-$shortname" \
+    "rm $joblist; echo 'All jobs completed. See logs/* for details.'"

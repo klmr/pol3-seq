@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+get_num_threads() {
+    < /proc/cpuinfo grep processor | wc -l
+}
+
+which_input_file() {
+    input_ref="$1"
+    input_index="$2"
+    sed -n ${input_index}p < "$input_ref"
+}
+
+rootname() {
+    basename "$1" | sed 's/\..*//'
+}
+
+unpacker() {
+    case "$1" in
+        *.gz)
+            echo 'gzip -dc'
+            ;;
+        *)
+            echo cat
+    esac
+}
+
+max_alignments=50
+num_threads=$(get_num_threads)
+mapper=bowtie2
+
+index="data/$mapper/Mus_musculus.GRCm38.75.dna.toplevel"
+
+input="$(which_input_file "$1" "$2")"
+output="results/$mapper/$(rootname "$input").bam"
+
+echo >&2 "Input:  $input"
+echo >&2 "Output: $output"
+
+mkdir -p "$(dirname "$output")"
+
+$(unpacker "$input") "$input" \
+| $mapper \
+    -k $max_alignments \
+    --threads $num_threads \
+    -x "$index" \
+    -q \
+    -U - \
+| samtools view -Sb -F 0x4 - \
+| samtools sort - "${output%.bam}"
+
+samtools index "$output"

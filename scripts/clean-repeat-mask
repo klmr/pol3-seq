@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+infile="${1-/dev/stdin}"
+outfile="/dev/stdout"
+
+< "$infile" tail -n +4 | \
+    awk -v OFS='\t' '{
+        type = $11
+        sub("/.*", "", type)
+        if ($9 == "C")
+            strand = "."
+        else
+            strand = $9
+        id = NR
+        print $5, "repeat", type, $6, $7, ".", strand, ".", type "_id=\"repeat" id "\"; type=\"" $11 "\""
+    }' > "$outfile"

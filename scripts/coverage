@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+which_input_file() {
+    input_ref="$1"
+    input_index="$2"
+    sed -n ${input_index}p < "$input_ref"
+}
+
+input="$(which_input_file "$1" "$2")"
+output="${input%%.bam}.bedgraph"
+genome="data/mm10.genome"
+
+genomeCoverageBed -bg -trackline -ibam "$input" -g "$genome" \
+    > "$output"

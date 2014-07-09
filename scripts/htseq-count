@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+which_input_file() {
+    input_ref="$1"
+    input_index="$2"
+    sed -n ${input_index}p < "$input_ref"
+}
+
+input="$(which_input_file "$1" "$2")"
+target_dir="$(dirname "$input")/htseq"
+target_base="$(basename "$input")"
+output="$target_dir/${target_base%%.bam}.counts"
+annotation='data/Mus_musculus.GRCm38.75.repeats.gff'
+
+mkdir -p "$target_dir"
+
+htseq-count \
+    -f bam -t SINE -i SINE_id \
+    --stranded=no \
+    "$input" "$annotation" \
+    > "$output"

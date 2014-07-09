@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# The produced BAM files used a full reference with wrong chromosome names
+# initially. This fixes that.
+
+which_input_file() {
+    input_ref="$1"
+    input_index="$2"
+    sed -n ${input_index}p < "$input_ref"
+}
+
+input="$(which_input_file "$1" "$2")"
+output="$input"
+
+mv "$input" "$input.tmp"
+samtools view -h "$input.tmp" \
+    | awk -F '\t' -v OFS='\t' '
+    /^@SQ/ {
+        $2 = "SN:chr" substr($2, 4, match($2, " ") - 4)
+        print
+    }
+
+    /^@/ && !/^@SQ/ { print }
+
+    !/^@/ {
+        $3 = "chr" substr($3, 0, match($3, " ") - 1)
+        print
+    }' \
+    | samtools view -Sb - \
+    > "$output"
+
+samtools index "$output"
+#rm "$input.tmp"
