@@ -4,16 +4,6 @@ get_num_threads() {
     < /proc/cpuinfo grep processor | wc -l
 }
 
-which_input_file() {
-    input_ref="$1"
-    input_index="$2"
-    sed -n ${input_index}p < "$input_ref"
-}
-
-rootname() {
-    basename "$1" | sed 's/\..*//'
-}
-
 unpacker() {
     case "$1" in
         *.gz)
@@ -28,10 +18,9 @@ max_alignments=50
 num_threads=$(get_num_threads)
 mapper=bowtie2
 
-index="data/$mapper/Mus_musculus.GRCm38.75.dna.toplevel"
-
-input="$(which_input_file "$1" "$2")"
-output="results/$mapper/$(rootname "$input").bam"
+index="$1"
+input="$2"
+output="$3"
 
 echo >&2 "Input:  $input"
 echo >&2 "Output: $output"
