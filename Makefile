@@ -14,6 +14,7 @@ data_files = $(shell cat data/files-all.txt)
 data_base = $(dir $(word 1,${data_files}))
 mapped_reads = $(addprefix results/${mapper}/,$(patsubst %.fq.gz,%.bam, $(notdir ${data_files})))
 
+.PHONY: index
 index: ${index}.1.bt2
 
 # This is inconvenient, since the index actually consists of multiple files,
@@ -25,6 +26,7 @@ ${index}.1.bt2: ${reference} ${index_path}
 ${index_path}:
 	mkdir -p ${index_path}
 
+.PHONY: mapped-reads
 mapped-reads: ${mapped_reads}
 
 ${mapped_reads}: ${index}.1.bt2 results/${mapper}
