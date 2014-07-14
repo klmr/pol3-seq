@@ -45,5 +45,14 @@ mapped-reads: ${mapped_reads}
 ${mapped_reads}: ${index}.1.bt2 results/${mapper}
 	${bsub} -M 16000 -R 'rusage[mem=16000]' "./scripts/${mapper} ${index} $(call library_for,$@) $@"
 
+.PHONY: coverage
+coverage: ${coverage}
+
+${coverage}: ${mapped_reads} results/${mapper}/coverage
+	echo "bedtools coverage -abam $(call bam_for,$@) -b ${annotation} > $@"
+
 results/${mapper}:
+	mkdir -p $@
+
+results/${mapper}/coverage:
 	mkdir -p $@
