@@ -45,6 +45,12 @@ mapped-reads: ${mapped_reads}
 ${mapped_reads}: ${index}.1.bt2 results/${mapper}
 	${bsub} -M 16000 -R 'rusage[mem=16000]' "./scripts/${mapper} ${index} $(call library_for,$@) $@"
 
+.PHONY: bigwig
+bigwig: ${bigwig}
+
+${bigwig}: ${mapped_reads} ${genomesize}
+	echo "./scripts/bigwig $(call bam_for,$@) ${genomesize} $@"
+
 .PHONY: coverage
 coverage: ${coverage}
 
