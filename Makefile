@@ -6,13 +6,20 @@ define library_for =
 $(addprefix ${data_base},$(patsubst %.bam,%.fq.gz,$(notdir $1)))
 endef
 
-reference = data/Mus_musculus.GRCm38.75.dna.primary_assembly.fa
+define bam_for =
+$(addprefix results/${mapper},$(notdir $(addsuffix .bam,$(basename $1))))
+endef
+
+genome = Mus_musculus.GRCm38.75
+reference = data/${genome}.dna.primary_assembly.fa
 index_prefix = $(notdir $(basename ${reference}))
 index_path = data/${mapper}
 index = ${index_path}/${index_prefix}
 data_files = $(shell cat data/files-all.txt)
 data_base = $(dir $(word 1,${data_files}))
 mapped_reads = $(addprefix results/${mapper}/,$(patsubst %.fq.gz,%.bam, $(notdir ${data_files})))
+genomesize = data/${reference}.fai
+annotation = data/${genome}.repeats.gff
 
 .PHONY: index
 index: ${index}.1.bt2
