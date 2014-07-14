@@ -33,6 +33,12 @@ ${index}.1.bt2: ${reference} ${index_path}
 ${index_path}:
 	mkdir -p ${index_path}
 
+.PHONY: genomesize
+genomesize: ${genomesize}
+
+${genomesize}: ${reference}
+	${bsub} "samtools faidx $<"
+
 .PHONY: mapped-reads
 mapped-reads: ${mapped_reads}
 
