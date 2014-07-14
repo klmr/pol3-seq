@@ -1,0 +1,39 @@
+# First look at quantification of SINEs
+
+```{r echo=FALSE}
+library(dplyr)
+library(knitr)
+
+# WTF, Knitr?!
+root_dir = normalizePath(file.path(getwd(), '..'))
+base_dir = file.path(root_dir, 'results', 'report')
+opts_knit$set(root.dir = root_dir,
+              base.dir = base_dir)
+```
+
+We look at tRNA derived (or something like that) SINEs only at first, since their number is already quite large.
+
+```{r results='asis'}
+filename = './results/tophat-old/coverage/do2011.sine-trna.coverage'
+data = read.table(filename, sep = '\t', header = FALSE, stringsAsFactors = FALSE)
+kable(head(data))
+```
+
+This file was generated via `bedtools coverage`.
+Column `V10` is the read count overlapping with the feature in that row. Here’s a rough overview:
+
+```{r}
+hist(data$V10, ylim = c(0, 100), breaks = 20, col = 'grey', border = 'grey')
+```
+
+Let’s look at the genes with more than 20 mapping reads. But first, get rid of useless columns.
+
+```{r results='asis'}
+colnames(data) = c('Chr', 'Generator', 'Type', 'Start', 'End' , 'Score',
+                   'Strand', 'Frame', 'Attributes', 'Count', 'BasesCovered',
+                   'FeatureLength', 'FractionCovered')
+data = select(data, Chr, Start, End, Type, Attributes, Count, BasesCovered)
+
+top_expressed = filter(data, Count >= 20)
+kable(top_expressed)
+```
