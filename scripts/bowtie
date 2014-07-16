@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+get_num_threads() {
+    < /proc/cpuinfo grep processor | wc -l
+}
+
+max_alignments=50
+num_threads=$(get_num_threads)
+mapper=bowtie
+
+index="$1"
+input="$2"
+output="$3"
+
+echo >&2 "Input:  $input"
+echo >&2 "Output: $output"
+
+mkdir -p "$(dirname "$output")"
+
+tally \
+    -i "$input" \
+    -o - \
+    --nozip \
+    --with-quality \
+| $mapper \
+    --all --best --strata \
+    --threads $num_threads \
+    "$index" \
+    -q \
+    --sam \
+    - \
+| samtools view -Sb -F 0x4 - \
+| samtools sort - "${output%.bam}"
+
+samtools index "$output"

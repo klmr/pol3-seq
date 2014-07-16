@@ -1,5 +1,5 @@
-mapper = bowtie2
-mkindex = bowtie2-build
+mapper = bowtie
+mkindex = bowtie-build
 bsub = ./scripts/bsub
 
 define library_for =
@@ -22,13 +22,13 @@ genomesize = data/${reference}.fai
 annotation = data/${genome}.repeats.gff
 
 .PHONY: index
-index: ${index}.1.bt2
+index: ${index}.1.ebwt
 
 # This is inconvenient, since the index actually consists of multiple files,
 # which are numbered. Unfortunately I don’t know how many, so I just refer to
-# the first file (*.1.bt2) here.
-${index}.1.bt2: ${reference} ${index_path}
-	${bsub} -M 16000 -R 'rusage[mem=16000]' "${mkindex} $< ${index}"
+# the first file (*.1.ebwt) here.
+${index}.1.ebwt: ${reference} ${index_path}
+	${bsub} -M 16000 -R 'rusage[mem=16000]' "${mkindex} --offrate 3 $< ${index}"
 
 ${index_path}:
 	mkdir -p ${index_path}
@@ -42,8 +42,8 @@ ${genomesize}: ${reference}
 .PHONY: mapped-reads
 mapped-reads: ${mapped_reads}
 
-${mapped_reads}: ${index}.1.bt2 results/${mapper}
-	${bsub} -M 16000 -R 'rusage[mem=16000]' "./scripts/${mapper} ${index} $(call library_for,$@) $@"
+${mapped_reads}: ${index}.1.ebwt results/${mapper}
+	${bsub} -M 32000 -R 'rusage[mem=32000]' "./scripts/${mapper} ${index} $(call library_for,$@) $@"
 
 .PHONY: bigwig
 bigwig: ${bigwig}
