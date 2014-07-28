@@ -20,6 +20,7 @@ data_base = $(dir $(word 1,${data_files}))
 mapped_reads = $(addprefix results/${mapper}/,$(patsubst %.fq.gz,%.bam, $(notdir ${data_files})))
 genomesize = data/${reference}.fai
 annotation = data/${genome}.repeats.gff
+memlimit = 64000
 
 .PHONY: index
 index: ${index}.1.ebwt
@@ -43,7 +44,7 @@ ${genomesize}: ${reference}
 mapped-reads: ${mapped_reads}
 
 ${mapped_reads}: ${index}.1.ebwt results/${mapper}
-	${bsub} -M 32000 -R 'rusage[mem=32000]' "./scripts/${mapper} ${index} $(call library_for,$@) $@"
+	${bsub} -M ${memlimit} -n 32 -R 'rusage[mem=${memlimit}]' "./scripts/${mapper} ${index} $(call library_for,$@) $@"
 
 .PHONY: bigwig
 bigwig: ${bigwig}

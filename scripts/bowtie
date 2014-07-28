@@ -7,10 +7,15 @@ get_num_threads() {
 max_alignments=50
 num_threads=$(get_num_threads)
 mapper=bowtie
+scratch_base='/gpfs/nobackup/marioni/konrad'
+scratch_dir="$scratch_base/$(uuidgen)"
+mkdir -p "$scratch_dir"
 
 index="$1"
 input="$2"
 output="$3"
+tmp_output="$scratch_dir/$(basename "$output")"
+max_mem=$((32 * 1024 * 1024 * 1024))
 
 echo >&2 "Input:  $input"
 echo >&2 "Output: $output"
@@ -30,6 +35,10 @@ tally \
     --sam \
     - \
 | samtools view -Sb -F 0x4 - \
-| samtools sort - "${output%.bam}"
+| samtools sort -m $max_mem - "${tmp_output%.bam}"
 
-samtools index "$output"
+samtools index "$tmp_output"
+
+echo >&2 mv "$scratch_dir"/* "$(dirname "$output")"
+mv "$scratch_dir"/* "$(dirname "$output")"
+rm -rf "$scratch_dir"
