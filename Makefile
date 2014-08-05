@@ -1,6 +1,7 @@
 mapper = bowtie
 mkindex = bowtie-build
 bsub = ./scripts/bsub
+format_repeat_annotation = src/gff-from-repeats
 
 define library_for =
 $(addprefix ${data_base},$(patsubst %.bam,%.fq.gz,$(notdir $1)))
@@ -21,6 +22,8 @@ mapped_reads = $(addprefix results/${mapper}/,$(patsubst %.fq.gz,%.bam, $(notdir
 genomesize = data/${reference}.fai
 annotation = data/${genome}.repeats.gff
 memlimit = 64000
+repeat_annotation = data/${genome}.repeats.gff
+repeat_annotation_repeatmasker = data/combined_repeats.out.gz
 
 .PHONY: index
 index: ${index}.1.ebwt
@@ -33,6 +36,12 @@ ${index}.1.ebwt: ${reference} ${index_path}
 
 ${index_path}:
 	mkdir -p ${index_path}
+
+.PHONY: repeat_annotation
+repeat_annotation: ${repeat_annotation}
+
+${repeat_annotation}: ${repeat_annotation_repeatmasker}
+	${bsub} "gunzip -c $< | ${format_repeat_annotation} > $@"
 
 .PHONY: genomesize
 genomesize: ${genomesize}
