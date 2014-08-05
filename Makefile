@@ -1,7 +1,15 @@
+#
+# Recipes for the result files of the Pol III ChIP-seq analysis for repeat elements
+#
+
+# Applications used
+
 mapper = bowtie
 mkindex = bowtie-build
 bsub = ./scripts/bsub
 format_repeat_annotation = src/gff-from-repeats
+
+# Function definitions
 
 define library_for =
 $(addprefix ${data_base},$(patsubst %.bam,%.fq.gz,$(notdir $1)))
@@ -10,6 +18,8 @@ endef
 define bam_for =
 $(addprefix results/${mapper},$(notdir $(addsuffix .bam,$(basename $1))))
 endef
+
+# Filenames of data sources and result targets
 
 genome = Mus_musculus.GRCm38.75
 reference = data/${genome}.dna.primary_assembly.fa
@@ -21,9 +31,14 @@ data_base = $(dir $(word 1,${data_files}))
 mapped_reads = $(addprefix results/${mapper}/,$(patsubst %.fq.gz,%.bam, $(notdir ${data_files})))
 genomesize = data/${reference}.fai
 annotation = data/${genome}.repeats.gff
-memlimit = 64000
 repeat_annotation = data/${genome}.repeats.gff
 repeat_annotation_repeatmasker = data/combined_repeats.out.gz
+
+# Other parameters
+
+memlimit = 64000
+
+# Rules to build result files
 
 .PHONY: index
 index: ${index}.1.ebwt
@@ -53,7 +68,8 @@ ${genomesize}: ${reference}
 mapped-reads: ${mapped_reads}
 
 ${mapped_reads}: ${index}.1.ebwt results/${mapper}
-	${bsub} -M ${memlimit} -n 32 -R 'rusage[mem=${memlimit}]' "./scripts/${mapper} ${index} $(call library_for,$@) $@"
+	${bsub} -M ${memlimit} -n 32 -R 'rusage[mem=${memlimit}]' \
+		"./scripts/${mapper} ${index} $(call library_for,$@) $@"
 
 .PHONY: bigwig
 bigwig: ${bigwig}
