@@ -12,11 +12,11 @@ format_repeat_annotation = src/gff-from-repeats
 # Function definitions
 
 define library_for =
-$(addprefix ${data_base},$(patsubst %.bam,%.fq.gz,$(notdir $1)))
+$(addprefix ${data_base}/,$(patsubst %.bam,%.fq.gz,$(notdir $1)))
 endef
 
 define bam_for =
-$(addprefix results/${mapper},$(notdir $(addsuffix .bam,$(basename $1))))
+$(addprefix ${map_path},$(notdir $(addsuffix .bam,$(basename $1))))
 endef
 
 # Filenames of data sources and result targets
@@ -25,16 +25,21 @@ genome = Mus_musculus.GRCm38.75
 reference = data/${genome}.dna.primary_assembly.fa
 index_prefix = $(notdir $(basename ${reference}))
 index_path = data/${mapper}
+map_path = results/${mapper}
+bigwig_path = ${map_path}
+coverage_path = ${map_path}/coverage
 index = ${index_path}/${index_prefix}
 data_files = $(shell cat data/files-all.txt)
-data_base = $(dir $(word 1,${data_files}))
-mapped_reads = $(addprefix results/${mapper}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data_files})))
+data_base = $(patsubst %/,%,$(dir $(word 1,${data_files})))
+mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data_files})))
 genomesize = ${reference}.fai
 annotation = data/${genome}.repeats.gff
 repeat_annotation = data/${genome}.repeats.gff
 repeat_annotation_repeatmasker = data/combined_repeats.out.gz
 bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
-coverage = $(patsubst %.bam,%.xxx,${mapped_reads})
+coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
+
+result_paths = $(sort ${map_path} ${bigwig_path} ${coverage_path})
 
 # Other parameters
 
@@ -72,24 +77,21 @@ ${genomesize}: ${reference}
 .PHONY: mapped-reads
 mapped-reads: ${mapped_reads}
 
-${mapped_reads}: ${index}.1.ebwt results/${mapper}
+${map_path}/%.bam: ${data_base}/%.fq.gz ${index}.1.ebwt ${map_path}
 	${bsub} -M ${memlimit} -n 32 -R 'rusage[mem=${memlimit}]' \
-		"./scripts/${mapper} ${index} $(call library_for,$@) $@"
+		"./scripts/${mapper} ${index} $< $@"
 
 .PHONY: bigwig
 bigwig: ${bigwig}
 
-${bigwig}: ${mapped_reads} ${genomesize}
-	echo "./scripts/bigwig $(call bam_for,$@) ${genomesize} $@"
+${bigwig_path}/%.bw: ${map_path}/%.bam ${genomesize} ${bigwig_path}
+	${bsub} "./scripts/bigwig $< ${genomesize} $@"
 
 .PHONY: coverage
 coverage: ${coverage}
 
-${coverage}: ${mapped_reads} results/${mapper}/coverage
-	echo "bedtools coverage -abam $(call bam_for,$@) -b ${annotation} > $@"
+${coverage_path}/%.counts: ${map_path}/%.bam ${coverage_path}
+	${bsub} -n 32 "bedtools coverage -abam $< -b ${annotation} > $@"
 
-results/${mapper}:
-	mkdir -p $@
-
-results/${mapper}/coverage:
+${result_paths}:
 	mkdir -p $@
