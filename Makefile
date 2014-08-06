@@ -33,6 +33,8 @@ genomesize = ${reference}.fai
 annotation = data/${genome}.repeats.gff
 repeat_annotation = data/${genome}.repeats.gff
 repeat_annotation_repeatmasker = data/combined_repeats.out.gz
+bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
+coverage = $(patsubst %.bam,%.xxx,${mapped_reads})
 
 # Other parameters
 
