@@ -58,6 +58,9 @@ repeat_annotation: ${repeat_annotation}
 ${repeat_annotation}: ${repeat_annotation_repeatmasker}
 	${bsub} "gunzip -c $< | ${format_repeat_annotation} > $@"
 
+data/${genome}.repeats.sine.trna.gff: ${repeat_annotation}
+	fgrep 'SINE/tRNA' $< > $@
+
 .PHONY: genomesize
 genomesize: ${genomesize}
 
