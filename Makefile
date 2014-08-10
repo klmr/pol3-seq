@@ -41,8 +41,7 @@ memlimit = 64000
 index: ${index}.1.ebwt
 
 # This is inconvenient, since the index actually consists of multiple files,
-# which are numbered. Unfortunately I don’t know how many, so I just refer to
-# the first file (*.1.ebwt) here.
+# which are numbered.
 ${index}.1.ebwt: ${reference} ${index_path}
 	${bsub} -M 16000 -R 'rusage[mem=16000]' "${mkindex} --offrate 3 $< ${index}"
 
