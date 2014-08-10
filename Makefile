@@ -9,16 +9,6 @@ mkindex = bowtie-build
 bsub = ./scripts/bsub
 format_repeat_annotation = src/gff-from-repeats
 
-# Function definitions
-
-define library_for =
-$(addprefix ${data_base}/,$(patsubst %.bam,%.fq.gz,$(notdir $1)))
-endef
-
-define bam_for =
-$(addprefix ${map_path},$(notdir $(addsuffix .bam,$(basename $1))))
-endef
-
 # Filenames of data sources and result targets
 
 genome = Mus_musculus.GRCm38.75
