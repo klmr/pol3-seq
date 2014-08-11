@@ -22,4 +22,4 @@ be written as
 make -j trna-coverage
 ```
 
-[makefile]: blob/master/Makefile
+[makefile]: Makefile
