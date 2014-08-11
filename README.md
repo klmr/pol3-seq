@@ -9,11 +9,8 @@ For example, to investigate tRNA-related SINE repeat coverage, try
 
 ```bash
 output=results/bowtie/coverage/trna
-targets=($(
-    while read lib; do
-        basename "$lib"
-    done < data/files-all.txt \
-        | sed "s#\(.*\)\.fq\.gz\$#$output/\1.counts#"
+targets=($(< data/files-all.txt xargs basename --multiple \
+    | sed "s#\(.*\)\.fq\.gz\$#$output/\1.counts#"
 ))
 make -j ${targets[@]}
 ```
