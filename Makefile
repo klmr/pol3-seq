@@ -6,7 +6,7 @@
 
 mapper = bowtie
 mkindex = bowtie-build
-bsub = ./scripts/bsub
+bsub = ./scripts/bsub -K
 format_repeat_annotation = src/gff-from-repeats
 
 # Filenames of data sources and result targets
