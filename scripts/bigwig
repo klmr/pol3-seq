@@ -5,5 +5,5 @@ genome="$2"
 output="$3"
 outputbg="${output%%.bw}.bedgaph"
 
-bedtools genomeCoverage -bg -ibam "$input" -g "$genome" > "$outputbg"
-bedGraphToBigWig "$outputbg" <(tail -n +2 "$genome") "$output"
+bedtools genomecov -bg -ibam "$input" -g "$genome" > "$outputbg"
+bedGraphToBigWig "$outputbg" "$genome" "$output"
