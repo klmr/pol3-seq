@@ -6,7 +6,7 @@
 
 mapper = bowtie
 mkindex = bowtie-build
-bsub = ./scripts/bsub
+bsub = ./scripts/bsub -K
 format_repeat_annotation = src/gff-from-repeats
 
 # Filenames of data sources and result targets
@@ -18,18 +18,20 @@ index_path = data/${mapper}
 map_path = results/${mapper}
 bigwig_path = ${map_path}
 coverage_path = ${map_path}/coverage
+trna_coverage_path = ${coverage_path}/trna
 index = ${index_path}/${index_prefix}
 data_files = $(shell cat data/files-all.txt)
 data_base = $(patsubst %/,%,$(dir $(word 1,${data_files})))
 mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data_files})))
 genomesize = ${reference}.fai
-annotation = data/${genome}.repeats.gff
 repeat_annotation = data/${genome}.repeats.gff
+trna_annotation = data/${genome}.repeats.sine.trna.gff
 repeat_annotation_repeatmasker = data/combined_repeats.out.gz
 bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
 coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
+trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 
-result_paths = $(sort ${map_path} ${bigwig_path} ${coverage_path})
+result_paths = $(sort ${map_path} ${bigwig_path} ${coverage_path}, ${trna_coverage_path})
 
 # Other parameters
 
@@ -54,7 +56,7 @@ repeat_annotation: ${repeat_annotation}
 ${repeat_annotation}: ${repeat_annotation_repeatmasker}
 	${bsub} "gunzip -c $< | ${format_repeat_annotation} > $@"
 
-data/${genome}.repeats.sine.trna.gff: ${repeat_annotation}
+${trna_annotation}: ${repeat_annotation}
 	fgrep 'SINE/tRNA' $< > $@
 
 .PHONY: genomesize
@@ -79,8 +81,14 @@ ${bigwig_path}/%.bw: ${map_path}/%.bam ${genomesize} ${bigwig_path}
 .PHONY: coverage
 coverage: ${coverage}
 
-${coverage_path}/%.counts: ${map_path}/%.bam ${coverage_path}
-	${bsub} -n 32 "bedtools coverage -abam $< -b ${annotation} > $@"
+${coverage_path}/%.counts: ${map_path}/%.bam ${repeat_annotation} ${coverage_path}
+	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
+
+.PHONY: trna-coverage
+trna-coverage: ${trna_coverage}
+
+${trna_coverage_path}/%.counts: ${map_path}/%.bam ${trna_annotation} ${trna_coverage_path}
+	${bsub} "bedtools coverage -abam $< -b ${trna_annotation} > $@"
 
 ${result_paths}:
 	mkdir -p $@
