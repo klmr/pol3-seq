@@ -3,7 +3,7 @@
 input="$1"
 genome="$2"
 output="$3"
-outputbg="${output%%.bw}.bedgaph"
+outputbg="${output%%.bw}.bedgraph"
 
 bedtools genomecov -bg -ibam "$input" -g "$genome" > "$outputbg"
 bedGraphToBigWig "$outputbg" "$genome" "$output"
