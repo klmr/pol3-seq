@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 args=("$@")
 job=("${args[${#args[@]}-1]}")
 unset args[${#args[@]}-1]
@@ -6,5 +7,3 @@ logfile="logs/$jobname-%J.log"
 errfile="logs/$jobname-%J.err"
 
 bsub -J "$jobname" -o "$logfile" -e "$errfile" ${args[@]} "$job"
-
-# vim: ft=sh
