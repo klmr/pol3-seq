@@ -6,7 +6,7 @@
 
 mapper = bowtie
 mkindex = bowtie-build
-bsub = ./scripts/bsub -K
+bsub = scripts/bsub -K
 format_repeat_annotation = src/gff-from-repeats
 
 # Filenames of data sources and result targets
@@ -19,6 +19,8 @@ map_path = results/${mapper}
 bigwig_path = ${map_path}
 coverage_path = ${map_path}/coverage
 trna_coverage_path = ${coverage_path}/trna
+script_path = scripts
+report_path = results/report
 index = ${index_path}/${index_prefix}
 data_files = $(shell cat data/files-all.txt)
 data_base = $(patsubst %/,%,$(dir $(word 1,${data_files})))
@@ -31,7 +33,7 @@ bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
 coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 
-result_paths = $(sort ${map_path} ${bigwig_path} ${coverage_path}, ${trna_coverage_path})
+result_paths = $(sort ${map_path} ${bigwig_path} ${coverage_path} ${trna_coverage_path} ${report_path})
 
 # Other parameters
 
@@ -89,6 +91,15 @@ trna-coverage: ${trna_coverage}
 
 ${trna_coverage_path}/%.counts: ${map_path}/%.bam ${trna_annotation} ${trna_coverage_path}
 	${bsub} "bedtools coverage -abam $< -b ${trna_annotation} > $@"
+
+# Reports
+
+${report_path}/%.html: ${report_path}/%.md
+	$(eval options = c('use_xhtml', 'mathjax', 'highlight_code', 'smartypants'))
+	Rscript --vanilla -e "options(markdown.HTML.options = NULL); markdown::markdownToHTML('$<', '$@', options = ${options})"
+
+${report_path}/%.md: ${script_path}/%.rmd ${report_path}
+	Rscript --vanilla -e "knitr::knit('$<', '$@')"
 
 ${result_paths}:
 	mkdir -p $@
