@@ -28,6 +28,7 @@ mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data
 genomesize = ${reference}.fai
 repeat_annotation = data/${genome}.repeats.gff
 trna_annotation = data/${genome}.repeats.sine.trna.gff
+line_annotation = data/${genome}.repeats.line.gff
 repeat_annotation_repeatmasker = data/combined_repeats.out.gz
 bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
 coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
@@ -60,6 +61,9 @@ ${repeat_annotation}: ${repeat_annotation_repeatmasker}
 
 ${trna_annotation}: ${repeat_annotation}
 	fgrep 'SINE/tRNA' $< > $@
+
+${line_annotation}: ${repeat_annotation}
+	fgrep 'LINE' $< > $@
 
 .PHONY: genomesize
 genomesize: ${genomesize}
