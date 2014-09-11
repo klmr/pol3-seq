@@ -20,7 +20,9 @@ index_path = data/${mapper}
 map_path = results/${mapper}
 sines_map_path = results/${mapper}/sines
 bigwig_path = ${map_path}
+sines_bigwig_path = ${sines_map_path}
 coverage_path = ${map_path}/coverage
+sines_coverage_path = ${sines_map_path}/coverage
 trna_coverage_path = ${coverage_path}/trna
 script_path = scripts
 report_path = results/report
@@ -31,15 +33,27 @@ data_base = $(patsubst %/,%,$(dir $(word 1,${data_files})))
 mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data_files})))
 sines_mapped = $(addprefix ${sines_map_path}/,$(notdir ${mapped_reads}))
 genomesize = ${reference}.fai
+sines_size = ${sines_reference}.fai
 repeat_annotation = data/${genome}.repeats.gff
 trna_annotation = data/${genome}.repeats.sine.trna.gff
 line_annotation = data/${genome}.repeats.line.gff
 repeat_annotation_repeatmasker = data/combined_repeats.out.gz
 bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
+sines_bigwig = $(patsubst %.bam,%.bw,${sines_mapped})
 coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
+sines_coverage = $(addprefix ${sines_coverage_path}/,$(patsubst %.bam,%.count,$(notdir ${sines_mapped})))
 trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 
-result_paths = $(sort ${map_path} ${bigwig_path} ${coverage_path} ${trna_coverage_path} ${report_path} ${sines_map_path})
+result_paths = $(sort \
+	${map_path} \
+	${bigwig_path} \
+	${coverage_path} \
+	${trna_coverage_path} \
+	${report_path} \
+	${sines_map_path} \
+	${sines_bigwig_path} \
+	${sines_coverage} \
+)
 
 # Other parameters
 
@@ -82,6 +96,12 @@ genomesize: ${genomesize}
 ${genomesize}: ${reference}
 	${bsub} "samtools faidx $<"
 
+.PHONY: sines-size
+sines-size: ${sines_size}
+
+${sines_size}: ${sines_reference}
+	${bsub} "samtools faidx $<"
+
 .PHONY: mapped-reads
 mapped-reads: ${mapped_reads}
 
@@ -102,10 +122,22 @@ bigwig: ${bigwig}
 ${bigwig_path}/%.bw: ${map_path}/%.bam ${genomesize} ${bigwig_path}
 	${bsub} "./scripts/bigwig $< ${genomesize} $@"
 
+.PHONY: sines-bigwig
+sines-bigwig: ${sines_bigwig}
+
+${sines_bigwig_path}/%.bw: ${sines_map_path}/%.bam ${sines_size} ${sines_bigwig_path}
+	${bsub} "./scripts/bigwig $< ${sines_size} $@"
+
 .PHONY: coverage
 coverage: ${coverage}
 
 ${coverage_path}/%.counts: ${map_path}/%.bam ${repeat_annotation} ${coverage_path}
+	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
+
+.PHONY: sines-coverage
+coverage: ${sines_coverage}
+
+${sines_coverage_path}/%.counts: ${sines_map_path}/%.bam ${repeat_annotation} ${sines_coverage_path}
 	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
 
 .PHONY: trna-coverage
