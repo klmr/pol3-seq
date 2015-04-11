@@ -3,8 +3,9 @@
 ```{r echo=FALSE}
 library(modules)
 import('knitr_init')
+knitr::opts_knit$set(fig.path = base_dir, 'figures/trna-',
+                     cache.path = base_dir, 'cache/trna-')
 ```
-
 
 ```{r}
 files = list.files('results/bowtie/coverage/trna', full.names = TRUE)
