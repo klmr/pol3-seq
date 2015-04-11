@@ -14,29 +14,66 @@ knitr::opts_knit$set(fig.path = 'figure/sine-',
                      cache.path = 'cache/sine-')
 ```
 
-We look at tRNA derived (or something like that) SINEs only at first, since their number is already quite large.
+Load the result files.
 
-```{r results='asis'}
-filename = './results/tophat-old/coverage/do2011.sine-trna.coverage'
-data = read.table(filename, sep = '\t', header = FALSE, stringsAsFactors = FALSE)
-kable(head(data))
+```{r load-data}
+result_parent = './results/bowtie/sines/express'
+result_folders = list.files(result_parent, pattern = 'PolIII', include.dirs = TRUE, full.names = TRUE)
+result_files = vapply(result_folders, file.path, character(1), 'results.xprs')
+results = sapply(result_files, read.table, sep = '\t', header = TRUE, simplify = FALSE)
+counts = `colnames<-`(sapply(results, function (x) x$tot_counts), NULL)
+
+control_folders = list.files(result_parent, pattern = 'Input', include.dirs = TRUE, full.names = TRUE)
+control_files = vapply(control_folders, file.path, character(1), 'results.xprs')
+controls = sapply(control_files, read.table, sep = '\t', header = TRUE, simplify = FALSE)
+control_counts = `colnames<-`(sapply(controls, function (x) x$tot_counts), NULL)
 ```
 
-This file was generated via `bedtools coverage`.
-Column `V10` is the read count overlapping with the feature in that row. Here’s a rough overview:
+Merge replicates by averaging.
 
-```{r}
-hist(data$V10, ylim = c(0, 100), breaks = 20, col = 'grey', border = 'grey')
+```{r merge-counts}
+get_condition_table = function (filenames) {
+    dos = sub('.*(do\\d+).*', '\\1', filenames)
+    conditions = strsplit(sub('.*(brain|liver).*BL6([^_]+).*', '\\1-\\2', filenames), '-')
+    tissues = sapply(conditions, function (cond) switch(cond[1], brain = 'Brain', liver = 'Liver'))
+    stages = sapply(conditions, function (cond) toupper(cond[2]))
+    data.frame(DO = dos, Tissue = tissues, Stage = stages, row.names = NULL) %>%
+        mutate(Condition = paste(Tissue, Stage, sep = '-')) %>%
+        tbl_df()
+}
+
+merge_replicates = function (counts, conditions)
+    `colnames<-`(counts, conditions$DO) %>%
+        melt(varnames = c('SINE', 'DO'), value.name = 'Count') %>%
+        inner_join(conditions, by = 'DO', copy = TRUE) %>%
+        group_by(SINE, Condition) %>%
+        summarize(Count = sum(Count)) %>%
+        tbl_df()
+
+conditions = get_condition_table(result_files)
+control_conditions = get_condition_table(control_files)
+
+long_counts = merge_replicates(counts, conditions)
+control_long_counts = merge_replicates(control_counts, control_conditions)
 ```
 
-Let’s look at the genes with more than 20 mapping reads. But first, get rid of useless columns.
+The distribution of counts:
 
-```{r results='asis'}
-colnames(data) = c('Chr', 'Generator', 'Type', 'Start', 'End' , 'Score',
-                   'Strand', 'Frame', 'Attributes', 'Count', 'BasesCovered',
-                   'FeatureLength', 'FractionCovered')
-data = select(data, Chr, Start, End, Type, Attributes, Count, BasesCovered)
+```{r summary, fig.width=12}
+asinh_trans = function ()
+    scales::trans_new('asinh', asinh, sinh, domain = c(-Inf, Inf))
 
-top_expressed = filter(data, Count >= 20)
-kable(top_expressed)
+scale_y_asinh = function (...)
+    scale_y_continuous(..., trans = asinh_trans())
+
+total_counts = rbind_list(mutate(long_counts, Experiment = 'PolIII'),
+                          mutate(control_long_counts, Experiment = 'Input'))
+
+ggplot(total_counts, aes(x = Condition, y = Count)) +
+    geom_boxplot(aes(fill = Experiment)) +
+    scale_y_asinh()
+
+ggplot(filter(total_counts, Count != 0), aes(x = Condition, y = Count)) +
+    geom_boxplot(aes(fill = Experiment)) +
+    scale_y_asinh(name = 'Counts (without zeros)')
 ```
