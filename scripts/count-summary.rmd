@@ -1,9 +1,17 @@
 # First look at quantification of SINEs
 
-```{r echo=FALSE}
+```{r set-options, echo=FALSE}
+library = function (...)
+    suppressMessages(base::library(..., warn.conflicts = FALSE, quietly = TRUE))
+
 library(modules)
 import('knitr_init')
 library(dplyr)
+library(reshape2)
+library(ggplot2)
+options(stringsAsFactors = FALSE)
+knitr::opts_knit$set(fig.path = 'figure/sine-',
+                     cache.path = 'cache/sine-')
 ```
 
 We look at tRNA derived (or something like that) SINEs only at first, since their number is already quite large.
