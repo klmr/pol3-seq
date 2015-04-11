@@ -158,10 +158,10 @@ ${trna_coverage_path}/%.counts: ${map_path}/%.bam ${trna_annotation} ${trna_cove
 
 ${report_path}/%.html: ${report_path}/%.md
 	$(eval options = c('use_xhtml', 'mathjax', 'highlight_code', 'smartypants'))
-	Rscript --vanilla -e "options(markdown.HTML.options = NULL); markdown::markdownToHTML('$<', '$@', options = ${options})"
+	Rscript -e "options(markdown.HTML.options = NULL); markdown::markdownToHTML('$<', '$@', options = ${options})"
 
 ${report_path}/%.md: ${script_path}/%.rmd ${report_path}
-	Rscript --vanilla -e "knitr::knit('$<', '$@')"
+	Rscript -e "knitr::knit('$<', '$@')"
 
 ${result_paths}:
 	mkdir -p $@
