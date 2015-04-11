@@ -9,6 +9,12 @@ mkindex = bowtie-build
 bsub = scripts/bsub -K
 format_repeat_annotation = src/gff-from-repeats
 
+#define folder =
+#	$(shell [[ -d $1 ]] || echo $1)
+#endef
+
+folder = $(if $(realpath $1),,$1)
+
 # Filenames of data sources and result targets
 
 genome = Mus_musculus.GRCm38.75
@@ -22,7 +28,7 @@ sines_map_path = results/${mapper}/sines
 bigwig_path = ${map_path}
 sines_bigwig_path = ${sines_map_path}
 coverage_path = ${map_path}/coverage
-sines_coverage_path = ${sines_map_path}/coverage
+sines_coverage_path = ${sines_map_path}/express
 trna_coverage_path = ${coverage_path}/trna
 script_path = scripts
 report_path = results/report
@@ -41,7 +47,7 @@ repeat_annotation_repeatmasker = data/combined_repeats.out.gz
 bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
 sines_bigwig = $(patsubst %.bam,%.bw,${sines_mapped})
 coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
-sines_coverage = $(addprefix ${sines_coverage_path}/,$(patsubst %.bam,%.count,$(notdir ${sines_mapped})))
+sines_coverage = $(addprefix ${sines_coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${sines_mapped})))
 trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 
 result_paths = $(sort \
@@ -52,7 +58,7 @@ result_paths = $(sort \
 	${report_path} \
 	${sines_map_path} \
 	${sines_bigwig_path} \
-	${sines_coverage} \
+	${sines_coverage_path} \
 )
 
 # Other parameters
@@ -113,7 +119,7 @@ ${map_path}/%.bam: ${data_base}/%.fq.gz ${index}.1.ebwt ${map_path}
 sines-mapped: ${sines_mapped}
 
 ${sines_map_path}/%.bam: ${data_base}/%.fq.gz ${sines_index}.1.ebwt ${sines_map_path}
-	${bsub} -M 8000 -n 16 -R 'rusage[mem=8000]' \
+	${bsub} -M 16000 -n 16 -R 'rusage[mem=16000]' \
 		"./scripts/${mapper} ${sines_index} $< $@"
 
 .PHONY: bigwig
@@ -135,10 +141,12 @@ ${coverage_path}/%.counts: ${map_path}/%.bam ${repeat_annotation} ${coverage_pat
 	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
 
 .PHONY: sines-coverage
-coverage: ${sines_coverage}
+sines-coverage: ${sines_coverage}
 
-${sines_coverage_path}/%.counts: ${sines_map_path}/%.bam ${repeat_annotation} ${sines_coverage_path}
-	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
+${sines_coverage_path}/%.counts: ${sines_map_path}/%.bam ${sines_reference} ${sines_coverage_path}
+	${bsub} "samtools sort -n $< $(<:.bam=.sorted); \
+		mkdir -p $@; \
+		express --output-dir $@ ${sines_reference} $(<:.bam=.sorted.bam) > $@/log"
 
 .PHONY: trna-coverage
 trna-coverage: ${trna_coverage}
