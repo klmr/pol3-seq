@@ -5,4 +5,5 @@ root_dir = normalizePath(file.path(getwd(), '..'))
 base_dir = file.path(root_dir, 'results', 'report')
 opts_knit$set(root.dir = root_dir,
               base.dir = base_dir,
+              dev = c('png', 'pdf'),
               cache = TRUE)
