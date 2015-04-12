@@ -3,8 +3,8 @@
 ```{r echo=FALSE}
 library(modules)
 import('knitr_init')
-knitr::opts_knit$set(fig.path = base_dir, 'figures/trna-',
-                     cache.path = base_dir, 'cache/trna-')
+knitr::opts_chunk$set(fig.path = 'figures/trna-',
+                      cache.path = 'cache/trna-')
 ```
 
 ```{r}

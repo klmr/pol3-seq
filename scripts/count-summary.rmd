@@ -11,8 +11,8 @@ library(reshape2)
 library(ggplot2)
 theme_set(theme_bw())
 options(stringsAsFactors = FALSE)
-knitr::opts_knit$set(fig.path = 'figure/sine-',
-                     cache.path = 'cache/sine-')
+knitr::opts_chunk$set(fig.path = 'figure/sine-',
+                      cache.path = 'cache/sine-')
 ```
 
 Load the result files.
