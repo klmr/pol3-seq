@@ -9,6 +9,7 @@ import('knitr_init')
 library(dplyr)
 library(reshape2)
 library(ggplot2)
+theme_set(theme_bw())
 options(stringsAsFactors = FALSE)
 knitr::opts_knit$set(fig.path = 'figure/sine-',
                      cache.path = 'cache/sine-')
@@ -76,4 +77,47 @@ ggplot(total_counts, aes(x = Condition, y = Count)) +
 ggplot(filter(total_counts, Count != 0), aes(x = Condition, y = Count)) +
     geom_boxplot(aes(fill = Experiment)) +
     scale_y_asinh(name = 'Counts (without zeros)')
+```
+
+Clearly the input libraries have substantial spurious binding. We subtract
+those from the raw counts.
+
+```{r confident-counts, fig.width=8}
+confident_counts = long_counts %>%
+    inner_join(rename(control_long_counts, InputCount = Count),
+               by = c('SINE', 'Condition')) %>%
+    mutate(Count = sapply(Count - InputCount, max, 0)) %>%
+    select(-InputCount)
+
+ggplot(confident_counts, aes(x = Condition, y = Count)) +
+    geom_boxplot() +
+    scale_y_asinh()
+```
+
+To assess how much binding differs between individual classes of SINEs, we sum
+over all conditions and show the distribution of read counts on SINE classes.
+We discard the lower quartile to get a more manageable distribution display.
+
+```{r counts-per-sine, fig.width=12}
+counts_per_sine = confident_counts %>%
+    group_by(SINE) %>%
+    summarize(Count = sum(Count))
+
+without_lower_q = counts_per_sine %>% filter(Count > quantile(Count, 0.25))
+ggplot(without_lower_q, aes(Count)) + geom_histogram(binwidth = 5000)
+```
+
+We can also look at how the counts differ across conditions: first across
+tissues, and then across stages.
+
+```{r counts-per-condition, fig.width=12}
+counts_over_condition = confident_counts %>%
+    mutate(Tissue = sapply(strsplit(Condition, '-'), function (x) x[1]),
+           Stage = sapply(strsplit(Condition, '-'), function (x) x[2]))
+
+ggplot(counts_over_condition, aes(Count, fill = Tissue)) +
+    geom_histogram(position = 'fill')
+
+ggplot(counts_over_condition, aes(Count, fill = Stage)) +
+    geom_histogram(position = 'fill')
 ```
