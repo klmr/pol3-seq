@@ -116,8 +116,8 @@ counts_over_condition = confident_counts %>%
            Stage = sapply(strsplit(Condition, '-'), function (x) x[2]))
 
 ggplot(counts_over_condition, aes(Count, fill = Tissue)) +
-    geom_histogram(position = 'fill')
+    geom_density(adjust = 10, position = 'fill', size = 0)
 
 ggplot(counts_over_condition, aes(Count, fill = Stage)) +
-    geom_histogram(position = 'fill')
+    geom_density(adjust = 10, position = 'fill', size = 0)
 ```
