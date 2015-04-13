@@ -11,9 +11,7 @@ get_num_threads() {
 max_alignments=50
 num_threads=$(get_num_threads)
 mapper=bowtie
-# Not working on compute nodes at the moment.
-#scratch_base='/gpfs/nobackup/marioni/konrad'
-scratch_base='./scratch'
+scratch_base='/gpfs/nobackup/marioni/konrad'
 scratch_dir="$scratch_base/$(uuidgen)"
 mkdir -p "$scratch_dir"
 

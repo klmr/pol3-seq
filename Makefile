@@ -112,15 +112,15 @@ ${sines_size}: ${sines_reference}
 mapped-reads: ${mapped_reads}
 
 ${map_path}/%.bam: ${data_base}/%.fq.gz ${index}.1.ebwt ${map_path}
-	${bsub} -M ${memlimit} -n 32 -R 'rusage[mem=${memlimit}]' \
-		"./scripts/${mapper} ${index} $< $@"
+	${bsub} -M ${memlimit} -n 32 -R 'select[gpfs]' -R 'rusage[mem=${memlimit}]' \
+		"./scripts/${mapper} --best ${index} $< $@"
 
 .PHONY: sines-mapped
 sines-mapped: ${sines_mapped}
 
 ${sines_map_path}/%.bam: ${data_base}/%.fq.gz ${sines_index}.1.ebwt ${sines_map_path}
-	${bsub} -M 16000 -n 16 -R 'rusage[mem=16000]' \
-		"./scripts/${mapper} ${sines_index} $< $@"
+	${bsub} -M 16000 -n 16 -R 'select[gpfs]' -R 'rusage[mem=16000]' \
+		"./scripts/${mapper} --all ${sines_index} $< $@"
 
 .PHONY: bigwig
 bigwig: ${bigwig}
