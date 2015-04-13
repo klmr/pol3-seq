@@ -17,11 +17,24 @@ scratch_base='./scratch'
 scratch_dir="$scratch_base/$(uuidgen)"
 mkdir -p "$scratch_dir"
 
-index="$1"
-input="$2"
-output="$3"
+mode="$1"
+index="$2"
+input="$3"
+output="$4"
 tmp_output="$scratch_dir/$(basename "$output")"
 max_mem=$((32 * 1024 * 1024 * 1024))
+
+case "$mode" in
+    --best)
+        map_options="-k 1 --best"
+        ;;
+    --all)
+        map_options="--all --best --strata"
+        ;;
+    *)
+        echo >&2 "ERROR: first argument must be --best or --all, $1 given."
+        exit 1
+esac
 
 echo >&2 "Input:  $input"
 echo >&2 "Output: $output"
@@ -34,7 +47,7 @@ tally \
     --nozip \
     --with-quality \
 | $mapper \
-    --all --best --strata \
+    $map_options \
     --threads $num_threads \
     "$index" \
     -q \
