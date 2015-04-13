@@ -156,8 +156,12 @@ ${sines_bigwig_path}/%.bw: ${sines_map_path}/%.bam ${sines_size} ${sines_bigwig_
 .PHONY: coverage
 coverage: ${coverage}
 
-${coverage_path}/%.counts: ${map_path}/%.bam ${repeat_annotation} ${coverage_path}
-	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
+#${coverage_path}/%.counts: ${map_path}/%.bam ${repeat_annotation} ${coverage_path}
+#	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
+
+#ANNOT_TYPES := ncrna trna foorna
+${coverage_path}/%.counts: #${map_path}/$%.bam
+	echo "target: $%; annotation: $*"
 
 .PHONY: sines-coverage
 sines-coverage: ${sines_coverage}
