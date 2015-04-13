@@ -19,6 +19,7 @@ folder = $(if $(realpath $1),,$1)
 
 genome = Mus_musculus.GRCm38.75
 reference = data/${genome}.dna.primary_assembly.fa
+nc_reference = data/${genome}.ncrna.fa
 sines_reference = data/repbase_sine_all.fasta
 index_prefix = $(notdir $(basename ${reference}))
 sines_index_prefix = $(notdir $(basename ${sines_reference}))
@@ -40,6 +41,7 @@ mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data
 sines_mapped = $(addprefix ${sines_map_path}/,$(notdir ${mapped_reads}))
 genomesize = ${reference}.fai
 sines_size = ${sines_reference}.fai
+all_annotation = data/${genome}.gtf
 repeat_annotation = data/${genome}.repeats.gff
 trna_annotation = data/${genome}.repeats.sine.trna.gff
 line_annotation = data/${genome}.repeats.line.gff
@@ -64,6 +66,20 @@ result_paths = $(sort \
 # Other parameters
 
 memlimit = 64000
+
+# Rules to download data files
+
+${all_annotation}:
+	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/gtf/mus_musculus/Mus_musculus.GRCm38.79.gtf.gz'
+	gunzip $@.gz
+
+${reference}:
+	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
+	gunzip $@.gz
+
+${nc_reference}:
+	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/ncrna/Mus_musculus.GRCm38.ncrna.fa.gz'
+	gunzip $@.gz
 
 # Rules to build result files
 
