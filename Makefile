@@ -84,7 +84,10 @@ ${nc_reference}:
 # Rules to build result files
 
 data/${genome}.genes.bed: ${all_annotation}
-	awk -vOFS='\t' '!/^#/ && ($$3=="gene") {print $$1, $$4, $$5, $$2}' $< > $@
+	awk -vOFS='\t' '!/^#/ && ($$3 == "gene") {print $$1, $$4 - 1, $$5, $$2}' $< > $@
+
+data/${genome}.repeats.bed: ${repeat_annotation}
+	awk -vOFS='\t' '!/^#/ && ($$3 != "Simple_repeat") {print $$1, $$4 - 1, $$5, $$3}' $< > $@
 
 .PHONY: index
 index: ${index}.1.ebwt
