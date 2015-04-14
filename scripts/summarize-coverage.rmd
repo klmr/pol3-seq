@@ -1,0 +1,97 @@
+```{r echo=FALSE}
+modules::import('knit')
+root_dir = normalizePath(file.path(getwd(), '..'))
+base_dir = file.path(root_dir, 'results', 'report')
+opts_knit$set(root.dir = root_dir,
+              base.dir = base_dir)
+opts_chunk$set(dev = c('png', 'pdf'),
+               cache = TRUE)
+```
+
+We have generated coverage for all annotated features of diverse feature types
+in an upstream step of the analysis. In this step, we aggregate all those
+different loci on a per-feature. This is done for each sample. The summary
+coverage file is manageable enough in terms of size to be easily transmitted.
+
+Since the total size of the files on disk is just shy of 10 GiB, we will
+perform the analysis per-file (i.e. per sample/feature type) rather than all at
+once. As a consequence, the subsequent code is wholly wrapped inside functions.
+
+Load the coverage data for a single sample and one super-type of feature (genes
+or repeats):
+
+```{r read-coverage-file}
+read_coverage_file = function (filename)
+    io$read_table(filename, header = FALSE) %>%
+    select(Type = 4, Coverage = 5, BasesCovered = 6, BasesTotal = 7) %>%
+    tbl_df()
+```
+
+(We left off the last column since it’s just `BasesCovered / BasesTotal`.
+
+Aggregate a single coverage table:
+
+```{r aggregate-coverage}
+aggregate_coverage = function (coverage)
+    coverage %>%
+    group_by(Type) %>%
+    summarise_each(funs(sum), -Type)
+```
+
+Merge the two super-type coverage tables for a single sample:
+
+```{r collate-annotations}
+collate_annotations = function (genes, repeats)
+    rbind_list(genes, repeats)
+```
+
+Of course we need to test this. So here goes.
+
+```{r test-run}
+coverage_path = 'results/bowtie/coverage'
+test1_file_genes = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_genes.counts'
+test1_file_repeats = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_repeats.counts'
+test1_genes = read_coverage_file(file.path(coverage_path, test1_file_genes))
+test1_repeats = read_coverage_file(file.path(coverage_path, test1_file_repeats))
+test1_genes_aggregate = aggregate_coverage(test1_genes)
+test1_repeats_aggregate = aggregate_coverage(test1_repeats)
+test1 = collate_annotations(test1_genes_aggregate, test1_repeats_aggregate)
+```
+
+---
+
+Now we prepare the actual analysis by listing and categorising the input files
+by sample and feature (super) type.
+
+```{r setup}
+all_files = list.files(coverage_path)
+info = as.data.frame(do.call(rbind, strsplit(all_files, '_'))) %>%
+    select(DO = 1, IP = 2, Tissue = 3, Stage = 5, Feature = 7) %>%
+    mutate(IP = ifelse(IP == 'polIII', 'PolIII', IP)) %>%
+    mutate(Tissue = sapply(Tissue, switch, liver = 'Liver', brain = 'Brain')) %>%
+    mutate(Stage = toupper(sub('^MMUS?BL6', '', Stage, ignore.case = TRUE))) %>%
+    mutate(Feature = sub('\\.counts$', '', Feature)) %>%
+    mutate(Filename = all_files) %>%
+    tbl_df()
+```
+
+Now we run this on all the data, in parallel. Collate all the results into one
+big (long format) table.
+
+```{r analysis}
+full_paths = file.path(coverage_path, all_files)
+cores = as.integer(Sys.getenv('LSB_MAX_NUM_PROCESSORS', parallel::detectCores()))
+results = parallel::mclapply(full_paths,
+                             aggregate_coverage %.% read_coverage_file,
+                             mc.cores = cores) %>%
+    {Map(function (a, b) cbind(a, Filename = b), ., all_files)} %>%
+    {do.call(rbind_list, .)} %>%
+    inner_join(info, by = 'Filename') %>%
+    select(-Filename)
+```
+
+Finally, save the result.
+
+```{r safe-result, cache=FALSE}
+io$write_table(results, './results/coverage-summary-all.tsv')
+```
