@@ -18,12 +18,15 @@ perform the analysis per-file (i.e. per sample/feature type) rather than all at
 once. As a consequence, the subsequent code is wholly wrapped inside functions.
 
 Load the coverage data for a single sample and one super-type of feature (genes
-or repeats):
+or repeats), discard all non-autosomal data:
 
 ```{r read-coverage-file}
 read_coverage_file = function (filename)
     io$read_table(filename, header = FALSE) %>%
-    select(Type = 4, Coverage = 5, BasesCovered = 6, BasesTotal = 7) %>%
+    select(Chr = 1, Feature = 4, Coverage = 5, BasesCovered = 6,
+           BasesTotal = 7) %>%
+    filter(grep('^\\d+$', Chr)) %>%
+    select(-Chr) %>%
     tbl_df()
 ```
 
@@ -34,8 +37,8 @@ Aggregate a single coverage table:
 ```{r aggregate-coverage}
 aggregate_coverage = function (coverage)
     coverage %>%
-    group_by(Type) %>%
-    summarise_each(funs(sum), -Type)
+    group_by(Feature) %>%
+    summarise_each(funs(sum), -Feature)
 ```
 
 Merge the two super-type coverage tables for a single sample:
@@ -66,11 +69,11 @@ by sample and feature (super) type.
 ```{r setup}
 all_files = list.files(coverage_path)
 info = as.data.frame(do.call(rbind, strsplit(all_files, '_'))) %>%
-    select(DO = 1, IP = 2, Tissue = 3, Stage = 5, Feature = 7) %>%
+    select(DO = 1, IP = 2, Tissue = 3, Stage = 5, Type = 7) %>%
     mutate(IP = ifelse(IP == 'polIII', 'PolIII', IP)) %>%
     mutate(Tissue = sapply(Tissue, switch, liver = 'Liver', brain = 'Brain')) %>%
     mutate(Stage = toupper(sub('^MMUS?BL6', '', Stage, ignore.case = TRUE))) %>%
-    mutate(Feature = sub('\\.counts$', '', Feature)) %>%
+    mutate(Type = sub('\\.counts$', '', Type)) %>%
     mutate(Filename = all_files) %>%
     tbl_df()
 ```
