@@ -1,0 +1,51 @@
+```{r init}
+modules::import('./knit')
+```
+
+We summarised the data in a previous analysis step, so we can just load it now.
+
+```{r load-data}
+(data = tbl_df(io$read_table('./results/coverage-summary-all.tsv',
+                             header = TRUE)))
+```
+
+Library size normalise the data by dividing the coverage in each sample by the
+sum of the coverage over all its features.
+
+```{r normalize}
+normalized = data %>%
+    group_by(DO, Type) %>%
+    mutate(LibrarySize = log(sum(Coverage))) %>%
+    mutate(LogCoverage = log(Coverage) - LibrarySize) %>%
+    ungroup()
+```
+
+Average over replicates.
+
+```{r average-replicates}
+all_same = function (data) {
+    stopifnot(length(unique(data)) == 1)
+    first(data)
+}
+
+averaged = normalized %>%
+    group_by(Type, Feature, IP, Tissue, Stage) %>%
+    summarize(Coverage = mean(Coverage), BasesTotal = all_same(BasesTotal)) %>%
+    ungroup()
+```
+
+Plot fraction of binding to each feature, for each stage (we are just
+interested in liver). Display only the top 10 highly covered features.
+
+```{r}
+top = averaged %>%
+    filter(IP == 'PolIII' & Tissue == 'Liver') %>%
+    group_by(Stage) %>%
+    mutate(RelCoverage = Coverage / BasesTotal) %>%
+    top_n(10, RelCoverage) %>%
+    ungroup()
+
+ggplot(top, aes(Stage, RelCoverage)) +
+    geom_bar(aes(fill = Feature), stat = 'identity') +
+    scale_fill_hue(l = 40)
+```
