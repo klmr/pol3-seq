@@ -52,6 +52,9 @@ coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${ma
 sines_coverage = $(addprefix ${sines_coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${sines_mapped})))
 trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 
+repeat_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_repeats.counts,$(notdir ${mapped_reads})))
+gene_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_genes.counts,$(notdir ${mapped_reads})))
+
 result_paths = $(sort \
 	${map_path} \
 	${bigwig_path} \
@@ -162,9 +165,17 @@ coverage: ${coverage}
 #${coverage_path}/%.counts: ${map_path}/%.bam ${repeat_annotation} ${coverage_path}
 #	${bsub} "bedtools coverage -abam $< -b ${repeat_annotation} > $@"
 
-#ANNOT_TYPES := ncrna trna foorna
-${coverage_path}/%.counts: #${map_path}/$%.bam
-	echo "target: $%; annotation: $*"
+.PHONY: repeat-coverage
+repeat-coverage: ${repeat_coverage}
+
+.PHONY: gene-coverage
+gene-coverage: ${gene_coverage}
+
+${coverage_path}/%_repeats.counts: ${map_path}/%.bam data/${genome}.repeats.bed
+	${bsub} -M 8000 -R 'rusage[mem=8000]' "bedtools coverage -abam $< -b data/${genome}.repeats.bed > $@"
+
+${coverage_path}/%_genes.counts: ${map_path}/%.bam data/${genome}.genes.bed
+	${bsub} -M 8000 -R 'rusage[mem=8000]' "bedtools coverage -abam $< -b data/${genome}.genes.bed > $@"
 
 .PHONY: sines-coverage
 sines-coverage: ${sines_coverage}
