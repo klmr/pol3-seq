@@ -87,11 +87,18 @@ top_10 = averaged %>%
     top_n(10, TPM) %>%
     .$Feature
 
-liver_pol3 = averaged %>%
-    filter(IP == 'PolIII', Tissue == 'Liver', Feature %in% top_10) %>%
-    mutate(Feature = factor(Feature, top_10, ordered = TRUE)) %>%
+get_plot_data = function (data, criteria, top_features) {
+    stopifnot(inherits(criteria, 'formula'))
+    data %>%
+    filter_(criteria) %>%
+    filter(Feature %in% top_features) %>%
+    mutate(Feature = factor(Feature, top_features, ordered = TRUE)) %>%
     mutate(Order = as.integer(Feature)) %>%
     arrange(Order)
+}
+
+liver_pol3 = get_plot_data(averaged,
+                           ~(IP == 'PolIII' & Tissue == 'Liver'), top_10)
 
 ggplot(liver_pol3, aes(Stage, TPM)) +
     geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
@@ -102,11 +109,8 @@ ggplot(liver_pol3, aes(Stage, TPM)) +
 Let’s double-check this with the inputs:
 
 ```{r plot-inputs, fig.width=12}
-liver_input = averaged %>%
-    filter(IP == 'Input', Tissue == 'Liver', Feature %in% top_10) %>%
-    mutate(Feature = factor(Feature, top_10, ordered = TRUE)) %>%
-    mutate(Order = as.integer(Feature)) %>%
-    arrange(Order)
+liver_input = get_plot_data(averaged,
+                            ~(IP == 'Input' & Tissue == 'Liver'), top_10)
 
 ggplot(liver_input, aes(Stage, TPM)) +
     geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
