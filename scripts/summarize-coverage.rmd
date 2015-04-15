@@ -19,7 +19,7 @@ read_coverage_file = function (filename)
     io$read_table(filename, header = FALSE) %>%
     select(Chr = 1, Feature = 4, Coverage = 5, BasesCovered = 6,
            BasesTotal = 7) %>%
-    filter(grep('^\\d+$', Chr)) %>%
+    filter(grepl('^\\d+$', Chr)) %>%
     select(-Chr) %>%
     tbl_df()
 ```
