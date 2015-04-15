@@ -100,10 +100,13 @@ get_plot_data = function (data, criteria, top_features) {
 liver_pol3 = get_plot_data(averaged,
                            ~(IP == 'PolIII' & Tissue == 'Liver'), top_10)
 
-ggplot(liver_pol3, aes(Stage, TPM)) +
-    geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
-    scale_y_continuous(name = 'Relative abundance of binding') +
-    scale_fill_brewer(palette = 'Set3')
+plot_coverage = function (data)
+    ggplot(data, aes(Stage, TPM)) +
+        geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
+        scale_y_continuous(name = 'Relative abundance of binding') +
+        scale_fill_brewer(palette = 'Set3')
+
+plot_coverage(liver_pol3)
 ```
 
 Let’s double-check this with the inputs:
@@ -112,8 +115,5 @@ Let’s double-check this with the inputs:
 liver_input = get_plot_data(averaged,
                             ~(IP == 'Input' & Tissue == 'Liver'), top_10)
 
-ggplot(liver_input, aes(Stage, TPM)) +
-    geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
-    scale_y_continuous(name = 'Relative abundance of binding') +
-    scale_fill_brewer(palette = 'Set3')
+plot_coverage(liver_input)
 ```
