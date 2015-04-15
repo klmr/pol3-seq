@@ -79,40 +79,6 @@ Plot fraction of binding to each feature, for each stage (we are just
 interested in liver). Display only the top 10 highly covered features.
 
 ```{r plot, fig.width=12}
-relative = averaged %>%
-    filter(IP == 'PolIII' & Tissue == 'Liver') %>%
-    group_by(Stage) %>%
-    mutate(RelCoverage = Coverage / BasesTotal)
-
-top = relative %>% top_n(10, Coverage) %>% ungroup()
-top_rel = relative %>% top_n(10, RelCoverage) %>% ungroup()
-
-ggplot(top_rel, aes(Stage, RelCoverage)) +
-    geom_bar(aes(fill = Feature), stat = 'identity') +
-    scale_y_continuous(name = 'Coverage [~FPKM]') +
-    scale_fill_brewer(palette = 'Set3')
-```
-
-Let’s double-check this with the inputs:
-
-```{r plot-inputs, fig.width=12}
-relative_input = averaged %>%
-    filter(IP == 'Input' & Tissue == 'Liver') %>%
-    group_by(Stage) %>%
-    mutate(RelCoverage = Coverage / BasesTotal)
-
-top_input = relative_input %>% top_n(10, Coverage) %>% ungroup()
-top_rel_input = relative_input %>% top_n(10, RelCoverage) %>% ungroup()
-
-ggplot(top_rel_input, aes(Stage, RelCoverage)) +
-    geom_bar(aes(fill = Feature), stat = 'identity') +
-    scale_y_continuous(name = 'Coverage [~FPKM]') +
-    scale_fill_brewer(palette = 'Set3')
-```
-
-Plot TPM normalised mean coverge values.
-
-```{r plot-tpm, fig.width=12}
 top_10 = averaged %>%
     filter(IP == 'PolIII', Tissue == 'Liver') %>%
     group_by(Feature) %>%
@@ -121,13 +87,13 @@ top_10 = averaged %>%
     top_n(10, TPM) %>%
     .$Feature
 
-tpm = averaged %>%
+liver_pol3 = averaged %>%
     filter(IP == 'PolIII', Tissue == 'Liver', Feature %in% top_10) %>%
     mutate(Feature = factor(Feature, top_10, ordered = TRUE)) %>%
     mutate(Order = as.integer(Feature)) %>%
     arrange(Order)
 
-ggplot(tpm, aes(Stage, TPM)) +
+ggplot(liver_pol3, aes(Stage, TPM)) +
     geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
     scale_y_continuous(name = 'Relative abundance of binding') +
     scale_fill_brewer(palette = 'Set3')
