@@ -6,7 +6,8 @@ We summarised the data in a previous analysis step, so we can just load it now.
 
 ```{r load-data}
 (data = tbl_df(io$read_table('./results/coverage-summary-all.tsv',
-                             header = TRUE)))
+                             header = TRUE)) %>%
+    mutate(Stage = factor(Stage, c('E15.5', 'E18.5', 'P0.5', 'P4', 'P22', 'P29'))))
 ```
 
 Library size normalise the data by dividing the coverage in each sample by the
