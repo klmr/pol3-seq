@@ -117,3 +117,23 @@ liver_input = get_plot_data(averaged,
 
 plot_coverage(liver_input)
 ```
+
+The absurd overrepresentation of “Satellite” elements justifies excluding this
+element from the analysis (in the absence of a good mechanism for background
+noise from the coverage data).
+
+```{r plot-no-satellite, fig.width=12}
+top_10_nosat = averaged %>%
+    filter(IP == 'PolIII', Tissue == 'Liver', Feature != 'Satellite') %>%
+    group_by(Feature) %>%
+    summarize(TPM = mean(TPM)) %>%
+    arrange(desc(TPM)) %>%
+    top_n(10, TPM) %>%
+    .$Feature
+
+liver_pol3_nosat = get_plot_data(averaged,
+                                 ~(IP == 'PolIII' & Tissue == 'Liver'),
+                                 top_10_nosat)
+
+plot_coverage(liver_pol3_nosat)
+```
