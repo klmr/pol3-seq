@@ -10,12 +10,44 @@ We summarised the data in a previous analysis step, so we can just load it now.
     mutate(Stage = factor(Stage, c('E15.5', 'E18.5', 'P0.5', 'P4', 'P22', 'P29'))))
 ```
 
+Some of the features are annotated in a way that is not helpful here. We will
+merge the different IG annotations, “SINE” and “SINE?”, “LTR” and “LTR?”, “RC”
+and “RC?”, and discard the (redundant) rRNA and snRNA annotations in the
+repeats feature set.
+
+```{r sanitize-data}
+merge_features = function (data, ...) {
+    dots = list(...)
+    new_name = names(dots)
+    features = dots[[1]]
+    stopifnot(length(new_name) == 1)
+    new_feature = data %>%
+        filter_(bquote(Feature %in% .(features))) %>%
+        group_by(DO, IP, Tissue, Stage) %>%
+        summarise_each(funs(sum), -Feature, -Type) %>%
+        mutate(Feature = new_name)
+    data = data %>%
+        filter_(bquote(! Feature %in% .(features)))
+
+    bind_rows(data, new_feature)
+}
+
+sanitized = data %>%
+    filter(Type == 'gene' | ! Feature %in% c('rRNA', 'snRNA')) %>%
+    merge_features(SINE = c('SINE', 'SINE?')) %>%
+    merge_features(LTR = c('LTR', 'LTR?')) %>%
+    merge_features(RC = c('RC', 'RC?')) %>%
+    merge_features(IG = c('IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene',
+                          'IG_V_gene')) %>%
+    select(-Type)
+```
+
 Library size normalise the data by dividing the coverage in each sample by the
 sum of the coverage over all its features.
 
 ```{r normalize}
-normalized = data %>%
-    group_by(DO, Type) %>%
+normalized = sanitized %>%
+    group_by(DO) %>%
     mutate(LogLibrarySize = log(sum(Coverage))) %>%
     mutate(LogCoveragePerBase = log(Coverage) - log(BasesTotal)) %>%
     mutate(TPM = exp(LogCoveragePerBase - log(sum(exp(LogCoveragePerBase))) + log(1E6))) %>%
@@ -32,7 +64,7 @@ all_same = function (data) {
 }
 
 averaged = normalized %>%
-    group_by(Type, Feature, IP, Tissue, Stage) %>%
+    group_by(Feature, IP, Tissue, Stage) %>%
     summarize(Coverage = mean(Coverage),
               TPM = mean(TPM),
               BasesTotal = all_same(BasesTotal)) %>%
@@ -78,19 +110,21 @@ Plot TPM normalised mean coverge values.
 
 ```{r plot-tpm, fig.width=12}
 top_10 = averaged %>%
-    filter(IP == 'PolIII', Tissue == 'Liver', Feature %in% top_10) %>%
+    filter(IP == 'PolIII', Tissue == 'Liver') %>%
     group_by(Feature) %>%
     summarize(TPM = mean(TPM)) %>%
-    arrange(TPM) %>%
+    arrange(desc(TPM)) %>%
     top_n(10, TPM) %>%
-    .$Feature %>%
-    factor(., levels = .)
+    .$Feature
 
 tpm = averaged %>%
     filter(IP == 'PolIII', Tissue == 'Liver', Feature %in% top_10) %>%
-    mutate(Feature = factor(Feature, levels = top_10))
+    mutate(Feature = factor(Feature, top_10, ordered = TRUE)) %>%
+    mutate(Order = as.integer(Feature)) %>%
+    arrange(Order)
 
 ggplot(tpm, aes(Stage, TPM)) +
     geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
+    scale_y_continuous(name = 'Relative abundance of binding') +
     scale_fill_brewer(palette = 'Set3')
 ```
