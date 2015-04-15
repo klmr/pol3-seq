@@ -98,3 +98,18 @@ ggplot(liver_pol3, aes(Stage, TPM)) +
     scale_y_continuous(name = 'Relative abundance of binding') +
     scale_fill_brewer(palette = 'Set3')
 ```
+
+Let’s double-check this with the inputs:
+
+```{r plot-inputs, fig.width=12}
+liver_input = averaged %>%
+    filter(IP == 'Input', Tissue == 'Liver', Feature %in% top_10) %>%
+    mutate(Feature = factor(Feature, top_10, ordered = TRUE)) %>%
+    mutate(Order = as.integer(Feature)) %>%
+    arrange(Order)
+
+ggplot(liver_input, aes(Stage, TPM)) +
+    geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
+    scale_y_continuous(name = 'Relative abundance of binding') +
+    scale_fill_brewer(palette = 'Set3')
+```
