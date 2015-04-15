@@ -3,17 +3,20 @@ modules::import('./knit')
 ```
 
 We summarised the data in a previous analysis step, so we can just load it now.
+We aren’t going to use all columns, so throw out what’s unnecessary
+immediately.
 
 ```{r load-data}
 (data = tbl_df(io$read_table('./results/coverage-summary-all.tsv',
                              header = TRUE)) %>%
+    select(-BasesCovered) %>%
     mutate(Stage = factor(Stage, c('E15.5', 'E18.5', 'P0.5', 'P4', 'P22', 'P29'))))
 ```
 
-Some of the features are annotated in a way that is not helpful here. We will
-merge the different IG annotations, “SINE” and “SINE?”, “LTR” and “LTR?”, “RC”
-and “RC?”, and discard the (redundant) rRNA and snRNA annotations in the
-repeats feature set.
+Some of the features are annotated in a way that is not immediately usable
+here. We will merge the different IG annotations, “SINE” and “SINE?”, “LTR” and
+“LTR?”, “RC” and “RC?”, and discard the (redundant) rRNA and snRNA annotations
+in the repeats feature set.
 
 ```{r sanitize-data}
 merge_features = function (data, ...) {
@@ -48,16 +51,17 @@ sum of the coverage over all its features.
 ```{r normalize}
 normalized = sanitized %>%
     group_by(DO) %>%
-    mutate(LogLibrarySize = log(sum(Coverage))) %>%
     mutate(LogCoveragePerBase = log(Coverage) - log(BasesTotal)) %>%
     mutate(TPM = exp(LogCoveragePerBase - log(sum(exp(LogCoveragePerBase))) + log(1E6))) %>%
-    select(-LogCoveragePerBase, -LogLibrarySize) %>%
+    select(-LogCoveragePerBase) %>%
     ungroup()
 ```
 
 Average over replicates.
 
 ```{r average-replicates}
+# Helper function that summarises a vector of all equal elements by picking the
+# first element, all the while ensuring that all elements are in fact equal.
 all_same = function (data) {
     stopifnot(length(unique(data)) == 1)
     first(data)
