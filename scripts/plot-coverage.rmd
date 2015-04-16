@@ -89,22 +89,33 @@ top_10 = averaged %>%
 
 get_plot_data = function (data, criteria, top_features) {
     stopifnot(inherits(criteria, 'formula'))
-    data %>%
-    filter_(criteria) %>%
-    filter(Feature %in% top_features) %>%
-    mutate(Feature = factor(Feature, top_features, ordered = TRUE)) %>%
-    mutate(Order = as.integer(Feature)) %>%
-    arrange(Order)
+    used_data = filter_(data, criteria)
+    flevels = c(top_features, 'Remainder')
+    remainder = used_data %>%
+        filter(! Feature %in% top_features) %>%
+        group_by(Stage) %>%
+        summarize(TPM = sum(TPM)) %>%
+        mutate(Feature = factor('Remainder', flevels))
+    used_data %>%
+        filter(Feature %in% top_features) %>%
+        mutate(Feature = factor(Feature, flevels, ordered = TRUE)) %>%
+        mutate(Order = as.integer(Feature)) %>%
+        arrange(Order) %>%
+        bind_rows(remainder)
 }
 
 liver_pol3 = get_plot_data(averaged,
                            ~(IP == 'PolIII' & Tissue == 'Liver'), top_10)
 
+library(RColorBrewer)
+
+fill_scale = c(brewer.pal(10, 'Set3'), 'grey')
+
 plot_coverage = function (data)
     ggplot(data, aes(Stage, TPM)) +
         geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
         scale_y_continuous(name = 'Relative abundance of binding') +
-        scale_fill_brewer(palette = 'Set3')
+        scale_fill_manual(values = fill_scale)
 
 plot_coverage(liver_pol3)
 ```
