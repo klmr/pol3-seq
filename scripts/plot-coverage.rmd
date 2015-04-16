@@ -108,14 +108,16 @@ liver_pol3 = get_plot_data(averaged,
                            ~(IP == 'PolIII' & Tissue == 'Liver'), top_10)
 
 library(RColorBrewer)
-
 fill_scale = c(brewer.pal(10, 'Set3'), 'grey')
 
 plot_coverage = function (data)
     ggplot(data, aes(Stage, TPM)) +
         geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
         scale_y_continuous(name = 'Relative abundance of binding') +
-        scale_fill_manual(values = fill_scale)
+        scale_fill_manual(values = fill_scale) +
+        theme(panel.border = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.grid.major.x = element_blank())
 
 plot_coverage(liver_pol3)
 ```
