@@ -1,11 +1,5 @@
 ```{r echo=FALSE}
 modules::import('knit')
-root_dir = normalizePath(file.path(getwd(), '..'))
-base_dir = file.path(root_dir, 'results', 'report')
-opts_knit$set(root.dir = root_dir,
-              base.dir = base_dir)
-opts_chunk$set(dev = c('png', 'pdf'),
-               cache = TRUE)
 ```
 
 We have generated coverage for all annotated features of diverse feature types
@@ -25,7 +19,7 @@ read_coverage_file = function (filename)
     io$read_table(filename, header = FALSE) %>%
     select(Chr = 1, Feature = 4, Coverage = 5, BasesCovered = 6,
            BasesTotal = 7) %>%
-    filter(grep('^\\d+$', Chr)) %>%
+    filter(grepl('^\\d+$', Chr)) %>%
     select(-Chr) %>%
     tbl_df()
 ```

@@ -1,0 +1,152 @@
+```{r init}
+modules::import('./knit')
+```
+
+We summarised the data in a previous analysis step, so we can just load it now.
+We aren’t going to use all columns, so throw out what’s unnecessary
+immediately.
+
+```{r load-data}
+(data = tbl_df(io$read_table('./results/coverage-summary-all.tsv',
+                             header = TRUE)) %>%
+    select(-BasesCovered) %>%
+    mutate(Stage = factor(Stage, c('E15.5', 'E18.5', 'P0.5', 'P4', 'P22', 'P29'))))
+```
+
+Some of the features are annotated in a way that is not immediately usable
+here. We will merge the different IG annotations, “SINE” and “SINE?”, “LTR” and
+“LTR?”, “RC” and “RC?”, and discard the (redundant) rRNA and snRNA annotations
+in the repeats feature set.
+
+```{r sanitize-data}
+merge_features = function (data, ...) {
+    dots = list(...)
+    new_name = names(dots)
+    features = dots[[1]]
+    stopifnot(length(new_name) == 1)
+    new_feature = data %>%
+        filter_(bquote(Feature %in% .(features))) %>%
+        group_by(DO, IP, Tissue, Stage) %>%
+        summarise_each(funs(sum), -Feature, -Type) %>%
+        mutate(Feature = new_name)
+    data = data %>%
+        filter_(bquote(! Feature %in% .(features)))
+
+    bind_rows(data, new_feature)
+}
+
+sanitized = data %>%
+    filter(Type == 'gene' | ! Feature %in% c('rRNA', 'snRNA')) %>%
+    merge_features(SINE = c('SINE', 'SINE?')) %>%
+    merge_features(LTR = c('LTR', 'LTR?')) %>%
+    merge_features(RC = c('RC', 'RC?')) %>%
+    merge_features(IG = c('IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene',
+                          'IG_V_gene')) %>%
+    select(-Type)
+```
+
+Library size normalise the data by dividing the coverage in each sample by the
+sum of the coverage over all its features.
+
+```{r normalize}
+normalized = sanitized %>%
+    group_by(DO) %>%
+    mutate(LogCoveragePerBase = log(Coverage) - log(BasesTotal)) %>%
+    mutate(TPM = exp(LogCoveragePerBase - log(sum(exp(LogCoveragePerBase))) + log(1E6))) %>%
+    select(-LogCoveragePerBase) %>%
+    ungroup()
+```
+
+Average over replicates.
+
+```{r average-replicates}
+# Helper function that summarises a vector of all equal elements by picking the
+# first element, all the while ensuring that all elements are in fact equal.
+all_same = function (data) {
+    stopifnot(length(unique(data)) == 1)
+    first(data)
+}
+
+averaged = normalized %>%
+    group_by(Feature, IP, Tissue, Stage) %>%
+    summarize(Coverage = mean(Coverage),
+              TPM = mean(TPM),
+              BasesTotal = all_same(BasesTotal)) %>%
+    ungroup()
+```
+
+Plot fraction of binding to each feature, for each stage (we are just
+interested in liver). Display only the top 10 highly covered features.
+
+```{r plot, fig.width=12}
+top_10 = averaged %>%
+    filter(IP == 'PolIII', Tissue == 'Liver') %>%
+    group_by(Feature) %>%
+    summarize(TPM = mean(TPM)) %>%
+    arrange(desc(TPM)) %>%
+    top_n(10, TPM) %>%
+    .$Feature
+
+get_plot_data = function (data, criteria, top_features) {
+    stopifnot(inherits(criteria, 'formula'))
+    used_data = filter_(data, criteria)
+    flevels = c(top_features, 'Remainder')
+    remainder = used_data %>%
+        filter(! Feature %in% top_features) %>%
+        group_by(Stage) %>%
+        summarize(TPM = sum(TPM)) %>%
+        mutate(Feature = factor('Remainder', flevels))
+    used_data %>%
+        filter(Feature %in% top_features) %>%
+        mutate(Feature = factor(Feature, flevels, ordered = TRUE)) %>%
+        mutate(Order = as.integer(Feature)) %>%
+        arrange(Order) %>%
+        bind_rows(remainder)
+}
+
+liver_pol3 = get_plot_data(averaged,
+                           ~(IP == 'PolIII' & Tissue == 'Liver'), top_10)
+
+library(RColorBrewer)
+fill_scale = c(brewer.pal(10, 'Set3'), 'grey')
+
+plot_coverage = function (data)
+    ggplot(data, aes(Stage, TPM)) +
+        geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
+        scale_y_continuous(name = 'Relative abundance of binding') +
+        scale_fill_manual(values = fill_scale) +
+        theme(panel.border = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.grid.major.x = element_blank())
+
+plot_coverage(liver_pol3)
+```
+
+Let’s double-check this with the inputs:
+
+```{r plot-inputs, fig.width=12}
+liver_input = get_plot_data(averaged,
+                            ~(IP == 'Input' & Tissue == 'Liver'), top_10)
+
+plot_coverage(liver_input)
+```
+
+The absurd overrepresentation of “Satellite” elements justifies excluding this
+element from the analysis (in the absence of a good mechanism for background
+noise from the coverage data).
+
+```{r plot-no-satellite, fig.width=12}
+top_10_nosat = averaged %>%
+    filter(IP == 'PolIII', Tissue == 'Liver', Feature != 'Satellite') %>%
+    group_by(Feature) %>%
+    summarize(TPM = mean(TPM)) %>%
+    arrange(desc(TPM)) %>%
+    top_n(10, TPM) %>%
+    .$Feature
+
+liver_pol3_nosat = get_plot_data(averaged,
+                                 ~(IP == 'PolIII' & Tissue == 'Liver'),
+                                 top_10_nosat)
+
+plot_coverage(liver_pol3_nosat)
+```
