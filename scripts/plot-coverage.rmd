@@ -7,16 +7,18 @@ We aren’t going to use all columns, so throw out what’s unnecessary
 immediately.
 
 ```{r load-data}
+stage_levels = c('E15.5', 'E18.5', 'P0.5', 'P4', 'P22', 'P29')
 (data = tbl_df(io$read_table('./results/coverage-summary-all.tsv',
                              header = TRUE)) %>%
     select(-BasesCovered) %>%
-    mutate(Stage = factor(Stage, c('E15.5', 'E18.5', 'P0.5', 'P4', 'P22', 'P29'))))
+    mutate(Stage = factor(Stage, stage_levels)))
 ```
 
 Some of the features are annotated in a way that is not immediately usable
-here. We will merge the different IG annotations, “SINE” and “SINE?”, “LTR” and
-“LTR?”, “RC” and “RC?”, and discard the (redundant) rRNA and snRNA annotations
-in the repeats feature set.
+here. We will merge the different biotype annotations belonging in the same
+category, putative repeats, and discard the (redundant) rRNA and snRNA
+annotations in the repeats feature set (biotypes taken from
+http://www.ensembl.org/Help/Faq?id=468).
 
 ```{r sanitize-data}
 merge_features = function (data, ...) {
@@ -35,13 +37,22 @@ merge_features = function (data, ...) {
     bind_rows(data, new_feature)
 }
 
+all_trnas = unique(filter(data, Type == 'trnas')$Feature)
 sanitized = data %>%
-    filter(Type == 'gene' | ! Feature %in% c('rRNA', 'snRNA')) %>%
+    filter(! (Type == 'repeats' & Feature %in% c('rRNA', 'snRNA', 'tRNA'))) %>%
+    filter(Feature != 'Other') %>%
+    merge_features(DNA = c('DNA', 'DNA?')) %>%
     merge_features(SINE = c('SINE', 'SINE?')) %>%
     merge_features(LTR = c('LTR', 'LTR?')) %>%
     merge_features(RC = c('RC', 'RC?')) %>%
-    merge_features(IG = c('IG_C_gene', 'IG_D_gene', 'IG_J_gene', 'IG_LV_gene',
-                          'IG_V_gene')) %>%
+    merge_features(`Protein coding` = c('IG_C_gene', 'IG_D_gene', 'IG_J_gene',
+                                        'IG_LV_gene', 'IG_V_gene',
+                                        'protein_coding')) %>%
+    merge_features(lncRNA = c('3prime_overlapping_ncrna', 'antisense',
+                              'lincRNA', 'processed_transcript',
+                              'sense_intronic', 'sense_overlapping')) %>%
+    merge_features(ncRNA = c('miRNA', 'misc_RNA', 'snoRNA', 'snRNA')) %>%
+    merge_features(tRNA = all_trnas) %>%
     select(-Type)
 ```
 
@@ -90,12 +101,12 @@ top_10 = averaged %>%
 get_plot_data = function (data, criteria, top_features) {
     stopifnot(inherits(criteria, 'formula'))
     used_data = filter_(data, criteria)
-    flevels = c(top_features, 'Remainder')
+    flevels = c(top_features, 'Other')
     remainder = used_data %>%
         filter(! Feature %in% top_features) %>%
         group_by(Stage) %>%
         summarize(TPM = sum(TPM)) %>%
-        mutate(Feature = factor('Remainder', flevels))
+        mutate(Feature = factor('Other', flevels))
     used_data %>%
         filter(Feature %in% top_features) %>%
         mutate(Feature = factor(Feature, flevels, ordered = TRUE)) %>%
@@ -108,7 +119,7 @@ liver_pol3 = get_plot_data(averaged,
                            ~(IP == 'PolIII' & Tissue == 'Liver'), top_10)
 
 library(RColorBrewer)
-fill_scale = c(brewer.pal(10, 'Set3'), 'grey')
+fill_scale = c(brewer.pal(10, 'Set3'), '#F0F0F0')
 
 plot_coverage = function (data)
     ggplot(data, aes(Stage, TPM)) +
