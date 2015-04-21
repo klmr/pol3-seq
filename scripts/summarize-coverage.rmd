@@ -48,11 +48,16 @@ Of course we need to test this. So here goes.
 coverage_path = 'results/bowtie/coverage'
 test1_file_genes = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_genes.counts'
 test1_file_repeats = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_repeats.counts'
+test1_file_trna = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_trna.counts'
 test1_genes = read_coverage_file(file.path(coverage_path, test1_file_genes))
 test1_repeats = read_coverage_file(file.path(coverage_path, test1_file_repeats))
+test1_trna = read_coverage_file(file.path(coverage_path, test1_file_trna))
 test1_genes_aggregate = aggregate_coverage(test1_genes)
 test1_repeats_aggregate = aggregate_coverage(test1_repeats)
-test1 = collate_annotations(test1_genes_aggregate, test1_repeats_aggregate)
+test1_trna_aggregate = aggregate_coverage(test1_trna)
+test1 = collate_annotations(test1_genes_aggregate,
+                            test1_repeats_aggregate,
+                            test1_trna_aggregate)
 ```
 
 ---
