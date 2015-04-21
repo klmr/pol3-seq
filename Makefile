@@ -50,10 +50,11 @@ bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
 sines_bigwig = $(patsubst %.bam,%.bw,${sines_mapped})
 coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 sines_coverage = $(addprefix ${sines_coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${sines_mapped})))
-trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
+#trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 
 repeat_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_repeats.counts,$(notdir ${mapped_reads})))
 gene_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_genes.counts,$(notdir ${mapped_reads})))
+trna_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_trnas.counts,$(notdir ${mapped_reads})))
 
 result_paths = $(sort \
 	${map_path} \
@@ -171,11 +172,17 @@ repeat-coverage: ${repeat_coverage}
 .PHONY: gene-coverage
 gene-coverage: ${gene_coverage}
 
+.PHONY: trna-coverage
+trna-coverage: ${trna_coverage}
+
 ${coverage_path}/%_repeats.counts: ${map_path}/%.bam data/${genome}.repeats.bed
 	${bsub} -M 8000 -R 'rusage[mem=8000]' "bedtools coverage -abam $< -b data/${genome}.repeats.bed > $@"
 
 ${coverage_path}/%_genes.counts: ${map_path}/%.bam data/${genome}.genes.bed
 	${bsub} -M 8000 -R 'rusage[mem=8000]' "bedtools coverage -abam $< -b data/${genome}.genes.bed > $@"
+
+${coverage_path}/%_trnas.counts: ${map_path}/%.bam data/${genome}.trnas.bed
+	${bsub} -M 8000 -R 'rusage[mem=8000]' "bedtools coverage -abam $< -b data/${genome}.trnas.bed > $@"
 
 .PHONY: sines-coverage
 sines-coverage: ${sines_coverage}
@@ -185,11 +192,11 @@ ${sines_coverage_path}/%.counts: ${sines_map_path}/%.bam ${sines_reference} ${si
 		mkdir -p $@; \
 		express --output-dir $@ ${sines_reference} $(<:.bam=.sorted.bam) > $@/log"
 
-.PHONY: trna-coverage
-trna-coverage: ${trna_coverage}
+#.PHONY: trna-coverage
+#trna-coverage: ${trna_coverage}
 
-${trna_coverage_path}/%.counts: ${map_path}/%.bam ${trna_annotation} ${trna_coverage_path}
-	${bsub} "bedtools coverage -abam $< -b ${trna_annotation} > $@"
+#${trna_coverage_path}/%.counts: ${map_path}/%.bam ${trna_annotation} ${trna_coverage_path}
+#	${bsub} "bedtools coverage -abam $< -b ${trna_annotation} > $@"
 
 # Reports
 
