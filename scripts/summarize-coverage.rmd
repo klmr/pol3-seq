@@ -38,8 +38,8 @@ aggregate_coverage = function (coverage)
 Merge the two super-type coverage tables for a single sample:
 
 ```{r collate-annotations}
-collate_annotations = function (genes, repeats)
-    rbind_list(genes, repeats)
+collate_annotations = function (genes, repeats, trnas)
+    rbind_list(genes, repeats, trnas)
 ```
 
 Of course we need to test this. So here goes.
@@ -48,7 +48,7 @@ Of course we need to test this. So here goes.
 coverage_path = 'results/bowtie/coverage'
 test1_file_genes = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_genes.counts'
 test1_file_repeats = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_repeats.counts'
-test1_file_trna = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_trna.counts'
+test1_file_trna = 'do1537_PolIII_brain_1900_mmuBL6e15.5_CRI01_trnas.counts'
 test1_genes = read_coverage_file(file.path(coverage_path, test1_file_genes))
 test1_repeats = read_coverage_file(file.path(coverage_path, test1_file_repeats))
 test1_trna = read_coverage_file(file.path(coverage_path, test1_file_trna))
