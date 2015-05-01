@@ -94,39 +94,28 @@ Plot fraction of binding to each feature, for each stage (we are just
 interested in liver). Display only the top 10 highly covered features.
 
 ```{r plot, fig.width=12}
-top_10 = averaged %>%
-    filter(IP == 'PolIII', Tissue == 'Liver') %>%
-    group_by(Feature) %>%
-    summarize(TPM = mean(TPM)) %>%
-    arrange(desc(TPM)) %>%
-    top_n(10, TPM) %>%
-    .$Feature
-
-get_plot_data = function (data, criteria, top_features) {
+get_plot_data = function (data, criteria, counts_col_name = 'TPM') {
     stopifnot(inherits(criteria, 'formula'))
     used_data = filter_(data, criteria)
-    flevels = c(top_features, 'Other')
-    remainder = used_data %>%
-        filter(! Feature %in% top_features) %>%
-        group_by(Stage) %>%
-        summarize(TPM = sum(TPM)) %>%
-        mutate(Feature = factor('Other', flevels))
+    top_features = used_data %>%
+        group_by(Feature) %>%
+        summarize_(Counts = bquote(mean(.(as.name(counts_col_name))))) %>%
+        arrange(desc(Counts)) %>%
+        .$Feature
     used_data %>%
-        filter(Feature %in% top_features) %>%
-        mutate(Feature = factor(Feature, flevels, ordered = TRUE)) %>%
+        rename_(Counts = counts_col_name) %>%
+        mutate(Feature = factor(Feature, top_features, ordered = TRUE)) %>%
         mutate(Order = as.integer(Feature)) %>%
-        arrange(Order) %>%
-        bind_rows(remainder)
+        arrange(Order)
 }
 
-liver_pol3 = get_plot_data(averaged,
-                           ~(IP == 'PolIII' & Tissue == 'Liver'), top_10)
+liver_pol3 = get_plot_data(averaged, ~(IP == 'PolIII' & Tissue == 'Liver'))
 
 library(RColorBrewer)
 fill_scale = c(brewer.pal(10, 'Set3'), '#F0F0F0')
 
 plot_coverage = function (data)
-    ggplot(data, aes(Stage, TPM)) +
+    ggplot(data, aes(Stage, Counts)) +
         geom_bar(aes(fill = Feature), stat = 'identity', position = 'fill') +
         scale_y_continuous(name = 'Relative abundance of binding') +
         scale_fill_manual(values = fill_scale) +
@@ -140,9 +129,7 @@ plot_coverage(liver_pol3)
 Let’s double-check this with the inputs:
 
 ```{r plot-inputs, fig.width=12}
-liver_input = get_plot_data(averaged,
-                            ~(IP == 'Input' & Tissue == 'Liver'), top_10)
-
+liver_input = get_plot_data(averaged, ~(IP == 'Input' & Tissue == 'Liver'))
 plot_coverage(liver_input)
 ```
 
@@ -151,17 +138,35 @@ element from the analysis (in the absence of a good mechanism for background
 noise from the coverage data).
 
 ```{r plot-no-satellite, fig.width=12}
-top_10_nosat = averaged %>%
-    filter(IP == 'PolIII', Tissue == 'Liver', Feature != 'Satellite') %>%
-    group_by(Feature) %>%
-    summarize(TPM = mean(TPM)) %>%
-    arrange(desc(TPM)) %>%
-    top_n(10, TPM) %>%
-    .$Feature
-
-liver_pol3_nosat = get_plot_data(averaged,
-                                 ~(IP == 'PolIII' & Tissue == 'Liver'),
-                                 top_10_nosat)
-
+nosat = filter(averaged, Feature != 'Satellite')
+liver_pol3_nosat = get_plot_data(nosat, ~(IP == 'PolIII' & Tissue == 'Liver'))
 plot_coverage(liver_pol3_nosat)
+```
+
+Unfortunately this is very much uninformative, besides telling us that most of
+the transcription is of tRNA. Let’s plot absolute coverage instead.
+
+```{r plot-absolute, fig.width=12}
+absolute = get_plot_data(nosat, ~(IP == 'PolIII' & Tissue == 'Liver'), 'Coverage')
+plot_coverage(absolute)
+```
+
+… which apparently mainly shows genomic feature length rather than anything
+about coverage. This becomes obvious when comparing the coverage with that of
+the inputs:
+
+```{r plot-absolute-inputs, fig.width=12}
+absolute_input = get_plot_data(nosat, ~(IP == 'Input' & Tissue == 'Liver'), 'Coverage')
+plot_coverage(absolute_input)
+```
+
+Hence that plot is not interpretable. Until I’ve figured out how to deal with
+the input data, I’ll go with the TPMs.
+
+Remove tRNA from the display to zoom in on rest.
+
+```{r plot-no-trna, fig.width=12}
+notrna = filter(nosat, Feature != 'tRNA')
+liver_notrna =  get_plot_data(notrna, ~(IP == 'PolIII' & Tissue == 'Liver'))
+plot_coverage(liver_notrna)
 ```
