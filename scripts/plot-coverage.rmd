@@ -1,4 +1,4 @@
-```{r init}
+```{r init, results='hide'}
 modules::import('./knit')
 ```
 
@@ -18,7 +18,7 @@ Some of the features are annotated in a way that is not immediately usable
 here. We will merge the different biotype annotations belonging in the same
 category, putative repeats, and discard the (redundant) rRNA and snRNA
 annotations in the repeats feature set (biotypes taken from
-http://www.ensembl.org/Help/Faq?id=468).
+http://www.gencodegenes.org/gencode_biotypes.html).
 
 ```{r sanitize-data}
 merge_features = function (data, ...) {
@@ -38,20 +38,24 @@ merge_features = function (data, ...) {
 }
 
 all_trnas = unique(filter(data, Type == 'trnas')$Feature)
+non_repeats = c('rRNA', 'snRNA', 'tRNA', 'srpRNA', 'scRNA')
 sanitized = data %>%
-    filter(! (Type == 'repeats' & Feature %in% c('rRNA', 'snRNA', 'tRNA'))) %>%
-    filter(Feature != 'Other') %>%
-    merge_features(DNA = c('DNA', 'DNA?')) %>%
+    filter(! (Type == 'repeats' & Feature %in% non_repeats)) %>%
+    merge_features(`repeat` = c('Unknown', 'Other', 'DNA', 'DNA?', 'RNA',
+                                'Low_complexity', 'RC', 'RC?')) %>%
     merge_features(SINE = c('SINE', 'SINE?')) %>%
     merge_features(LTR = c('LTR', 'LTR?')) %>%
     merge_features(RC = c('RC', 'RC?')) %>%
-    merge_features(`Protein coding` = c('IG_C_gene', 'IG_D_gene', 'IG_J_gene',
-                                        'IG_LV_gene', 'IG_V_gene',
+
+    merge_features(`protein-coding` = c('IG_C_gene', 'IG_D_gene', 'IG_J_gene',
+                                        'IG_LV_gene', 'IG_V_gene', 'TR_V_gene',
                                         'protein_coding')) %>%
-    merge_features(lncRNA = c('3prime_overlapping_ncrna', 'antisense',
-                              'lincRNA', 'processed_transcript',
-                              'sense_intronic', 'sense_overlapping')) %>%
-    merge_features(ncRNA = c('miRNA', 'misc_RNA', 'snoRNA', 'snRNA')) %>%
+    merge_features(ncRNA = c('3prime_overlapping_ncrna', 'antisense',
+                             'lincRNA', 'processed_transcript',
+                             'sense_intronic', 'sense_overlapping',
+                             'miRNA', 'misc_RNA', 'snoRNA', 'snRNA')) %>%
+    merge_features(pseudogene = c('IG_V_pseudogene', 'TR_V_pseudogene',
+                                  'polymorphic_pseudogene', 'pseudogene')) %>%
     merge_features(tRNA = all_trnas) %>%
     select(-Type)
 ```
