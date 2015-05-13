@@ -70,13 +70,15 @@ scale_y_asinh = function (...)
 total_counts = rbind_list(mutate(long_counts, Experiment = 'PolIII'),
                           mutate(control_long_counts, Experiment = 'Input'))
 
+asinh_breaks = 10 ** (0 : 5)
+
 ggplot(total_counts, aes(x = Condition, y = Count)) +
     geom_boxplot(aes(fill = Experiment)) +
-    scale_y_asinh()
+    scale_y_asinh(breaks = asinh_breaks)
 
 ggplot(filter(total_counts, Count != 0), aes(x = Condition, y = Count)) +
     geom_boxplot(aes(fill = Experiment)) +
-    scale_y_asinh(name = 'Counts (without zeros)')
+    scale_y_asinh(name = 'Counts (without zeros)', breaks = asinh_breaks)
 ```
 
 Clearly the input libraries have substantial spurious binding. We subtract
