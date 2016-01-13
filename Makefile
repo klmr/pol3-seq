@@ -35,7 +35,7 @@ script_path = scripts
 report_path = results/report
 index = ${index_path}/${index_prefix}
 sines_index = ${index_path}/${sines_index_prefix}
-data_files := $(shell cat data/files-all.txt)
+data_files := $(shell cat meta/library-files.txt)
 data_base = $(patsubst %/,%,$(dir $(word 1,${data_files})))
 mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data_files})))
 sines_mapped = $(addprefix ${sines_map_path}/,$(notdir ${mapped_reads}))
@@ -74,14 +74,17 @@ memlimit = 64000
 # Rules to download data files
 
 ${all_annotation}:
+	mkdir -p data
 	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/gtf/mus_musculus/Mus_musculus.GRCm38.79.gtf.gz'
 	gunzip $@.gz
 
 ${reference}:
+	mkdir -p data
 	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
 	gunzip $@.gz
 
 ${nc_reference}:
+	mkdir -p data
 	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/ncrna/Mus_musculus.GRCm38.ncrna.fa.gz'
 	gunzip $@.gz
 
