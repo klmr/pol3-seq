@@ -47,17 +47,16 @@ index: ${index}.1.ebwt
 
 # This is inconvenient, since the index actually consists of multiple files,
 # which are numbered.
-${index}.1.ebwt: ${reference} ${index_path}
+${index}.1.ebwt: ${reference}
+	mkdir -p ${index_path}
 	${bsub} -M 16000 -R 'rusage[mem=16000]' "${mkindex} --offrate 3 $< ${index}"
 
 .PHONY: sines_index
 sines_index: ${sines_index}.1.ebwt
 
-${sines_index}.1.ebwt: ${sines_reference} ${index_path}
-	${bsub} -M 8000 -R 'rusage[mem=8000]' "${mkindex} --offrate 1 $< ${sines_index}"
-
-${index_path}:
+${sines_index}.1.ebwt: ${sines_reference}
 	mkdir -p ${index_path}
+	${bsub} -M 8000 -R 'rusage[mem=8000]' "${mkindex} --offrate 1 $< ${sines_index}"
 
 .PHONY: repeat_annotation
 repeat_annotation: ${repeat_annotation}
@@ -151,6 +150,3 @@ ${sines_coverage_path}/%.counts: ${sines_map_path}/%.bam ${sines_reference} ${si
 
 ${report_path}/%.html: ${script_path}/%.rmd ${report_path}
 	Rscript -e "knitr::knit2html('$<', '$@')"
-
-${result_paths}:
-	mkdir -p $@

@@ -39,15 +39,4 @@ repeat_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_repeats.count
 gene_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_genes.counts,$(notdir ${mapped_reads})))
 trna_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_trnas.counts,$(notdir ${mapped_reads})))
 
-result_paths = $(sort \
-	${map_path} \
-	${bigwig_path} \
-	${coverage_path} \
-	${trna_coverage_path} \
-	${report_path} \
-	${sines_map_path} \
-	${sines_bigwig_path} \
-	${sines_coverage_path} \
-)
-
 # vim: ft=make
