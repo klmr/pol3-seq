@@ -29,11 +29,6 @@ ${reference}:
 	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
 	gunzip $@.gz
 
-${nc_reference}:
-	mkdir -p data
-	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/ncrna/Mus_musculus.GRCm38.ncrna.fa.gz'
-	gunzip $@.gz
-
 # Rules to build result files
 
 data/${genome}.genes.bed: ${all_annotation}

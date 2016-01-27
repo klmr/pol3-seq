@@ -2,7 +2,6 @@
 
 genome = Mus_musculus.GRCm38.75
 reference = data/${genome}.dna.primary_assembly.fa
-nc_reference = data/${genome}.ncrna.fa
 sines_reference = data/repbase_sine_all.fasta
 index_prefix = $(notdir $(basename ${reference}))
 sines_index_prefix = $(notdir $(basename ${sines_reference}))
