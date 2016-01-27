@@ -29,6 +29,16 @@ ${reference}:
 	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
 	gunzip $@.gz
 
+${trna_data}:
+	mkdir -p data
+	curl -o $@ http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
+
+${trna_annotation}: ${trna_data}
+	tar xfz $< mm10-tRNAs.bed && mv mm10-tRNAs.bed $@
+
+${trna_reference}: ${trna_data}
+	tar xfz $< mm10-tRNAs.fa && mv mm10-tRNAs.fa $@
+
 # Rules to build result files
 
 data/${genome}.genes.bed: ${all_annotation}
@@ -59,8 +69,8 @@ repeat_annotation: ${repeat_annotation}
 ${repeat_annotation}: ${repeat_annotation_repeatmasker}
 	${bsub} "gunzip -c $< | ${format_repeat_annotation} > $@"
 
-${trna_annotation}: ${repeat_annotation}
-	fgrep 'SINE/tRNA' $< > $@
+#${trna_annotation}: ${repeat_annotation}
+#	fgrep 'SINE/tRNA' $< > $@
 
 ${line_annotation}: ${repeat_annotation}
 	fgrep 'LINE' $< > $@
