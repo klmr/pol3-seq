@@ -46,11 +46,11 @@ ${trna_prefix}.extended.bed: ${trna_annotation} ${genomesize}
 ${trna_prefix}.flanking.bed: ${trna_annotation} ${genomesize}
 	bedtools flank -i $< -g ${genomesize} -b 100 > $@
 
-${trna_prefix}.index: ${trna_reference}
-	sailfish index --transcripts $< --out $@
+${trna_prefix}.salmon_index: ${trna_reference}
+	salmon index --transcripts $< --index $@
 
-${trna_prefix}%.index: ${trna_prefix}%.fa
-	sailfish index --transcripts $< --out $@
+${trna_prefix}.%.salmon_index: ${trna_prefix}.%.fa
+	salmon index --transcripts $< --index $@
 
 .PRECIOUS: $(addprefix ${trna_prefix}.,$(addsuffix .fa,flanking extended))
 
