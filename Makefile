@@ -46,6 +46,12 @@ ${trna_prefix}.extended.bed: ${trna_annotation} ${genomesize}
 ${trna_prefix}.flanking.bed: ${trna_annotation} ${genomesize}
 	bedtools flank -i $< -g ${genomesize} -b 100 > $@
 
+${trna_prefix}.index: ${trna_reference}
+	sailfish index --transcripts $< --out $@
+
+${trna_prefix}%.index: ${trna_prefix}%.fa
+	sailfish index --transcripts $< --out $@
+
 .PRECIOUS: $(addprefix ${trna_prefix}.,$(addsuffix .fa,flanking extended))
 
 # Rules to build result files
