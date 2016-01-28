@@ -34,8 +34,9 @@ coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${ma
 sines_coverage = $(addprefix ${sines_coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${sines_mapped})))
 #trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
 trna_data = data/mm10-tRNAs.tar.gz
-trna_annotation = data/${genome}.trna.bed
-trna_reference = data/${genome}.trna.fa
+trna_prefix = data/${genome}.trna
+trna_annotation = ${trna_prefix}.bed
+trna_reference = ${trna_prefix}.fa
 
 repeat_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_repeats.counts,$(notdir ${mapped_reads})))
 gene_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_genes.counts,$(notdir ${mapped_reads})))

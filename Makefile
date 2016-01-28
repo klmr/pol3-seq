@@ -37,9 +37,16 @@ ${trna_annotation}: ${trna_data}
 	tar xfz $< mm10-tRNAs.bed && mv mm10-tRNAs.bed $@
 	./scripts/fix-reference $@
 
-${trna_reference}: ${trna_data}
-	tar xfz $< mm10-tRNAs.fa && mv mm10-tRNAs.fa $@
-	./scripts/fix-reference $@
+data/%.fa: data/%.bed
+	bedtools getfasta -name -fi ${reference} -bed $< -fo $@
+
+${trna_prefix}.extended.bed: ${trna_annotation} ${genomesize}
+	bedtools slop -i $< -g ${genomesize} -b 100 > $@
+
+${trna_prefix}.flanking.bed: ${trna_annotation} ${genomesize}
+	bedtools flank -i $< -g ${genomesize} -b 100 > $@
+
+.PRECIOUS: $(addprefix ${trna_prefix}.,$(addsuffix .fa,flanking extended))
 
 # Rules to build result files
 
