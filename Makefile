@@ -35,9 +35,11 @@ ${trna_data}:
 
 ${trna_annotation}: ${trna_data}
 	tar xfz $< mm10-tRNAs.bed && mv mm10-tRNAs.bed $@
+	./scripts/fix-reference $@
 
 ${trna_reference}: ${trna_data}
 	tar xfz $< mm10-tRNAs.fa && mv mm10-tRNAs.fa $@
+	./scripts/fix-reference $@
 
 # Rules to build result files
 

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+filename="$1"
+
+case "$filename" in
+    *.bed)
+        sed --in-place='' 's/^chr//' "$filename"
+        ;;
+    *.fa)
+        sed --in-place='' --quiet '/^>/!p; /^>/s/(chr/(/p' "$filename"
+        ;;
+    *)
+        echo >&2 'ERROR: I do not know how to treat this file type'
+        return 1
+        ;;
+esac
