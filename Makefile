@@ -46,13 +46,28 @@ ${trna_prefix}.extended.bed: ${trna_annotation} ${genomesize}
 ${trna_prefix}.flanking.bed: ${trna_annotation} ${genomesize}
 	bedtools flank -i $< -g ${genomesize} -b 100 > $@
 
-${trna_prefix}.salmon_index: ${trna_reference}
+${trna_prefix}.bare.salmon_index: ${trna_reference}
 	salmon index --transcripts $< --index $@
 
 ${trna_prefix}.%.salmon_index: ${trna_prefix}.%.fa
 	salmon index --transcripts $< --index $@
 
 .PRECIOUS: $(addprefix ${trna_prefix}.,$(addsuffix .fa,flanking extended))
+
+lib=$(shell grep "$1" meta/library-files.txt)
+
+define salmon=
+	${bsub} "$$SHELL -c 'salmon quant --index $2 --libType U -r <(gunzip -c $(call lib,$1)) -o $3'"
+endef
+
+results/salmon/trna-bare/%: ${trna_prefix}.bare.salmon_index
+	$(call salmon,$*,$<,$@)
+
+results/salmon/trna-flanking/%: ${trna_prefix}.flanking.salmon_index
+	$(call salmon,$*,$<,$@)
+
+results/salmon/trna-extended/%: ${trna_prefix}.extended.salmon_index
+	$(call salmon,$*,$<,$@)
 
 # Rules to build result files
 
