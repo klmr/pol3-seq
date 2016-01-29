@@ -1,0 +1,38 @@
+#!/usr/bin/env Rscript
+
+library(modules)
+sys = import('sys')
+
+sys$run({
+    args = commandArgs(trailingOnly = TRUE)
+    import_package('dplyr', attach = TRUE)
+    import_package('tidyr', attach = TRUE)
+    base = import('ebits/base')
+    io = import('ebits/io')
+
+    name_tokens = strsplit(args, '/')
+    features = sub('trna-', '', vapply(name_tokens, `[[`, character(1), 3))
+    libraries = vapply(name_tokens, `[[`, character(1), 4)
+    all_data = Map(path ~ feature ~ lib ->
+                    io$read_table(path, sep = '\t', header = TRUE) %>%
+                        mutate(Feature = feature, Lib = lib),
+                   file.path(args, 'quant.sf'), features, libraries) %>%
+        bind_rows() %>%
+        select(Name, TPM, Feature, Lib) %>%
+        spread(Lib, TPM)
+
+    all_data = lapply(unique(features), feature ->
+        all_data %>%
+            filter(Feature == feature) %>%
+            select(Name, TPM, Lib) %>%
+            group_by(Name, Lib) %>%
+            summarize(TPM = mean(TPM)) %>%
+            ungroup() %>%
+            spread(Lib, TPM) %>%
+            mutate(Feature = feature)
+    ) %>% bind_rows()
+
+    io$write_table(all_data, 'results/salmon/merged-quant.tsv')
+})
+
+# vim: ft=r
