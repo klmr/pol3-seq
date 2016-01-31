@@ -23,11 +23,13 @@ result_folders = list.files(result_parent, pattern = 'PolIII', include.dirs = TR
 result_files = vapply(result_folders, file.path, character(1), 'results.xprs')
 results = sapply(result_files, read.table, sep = '\t', header = TRUE, simplify = FALSE)
 counts = `colnames<-`(sapply(results, function (x) x$tot_counts), NULL)
+rownames(counts) = results[[1]]$target_id
 
 control_folders = list.files(result_parent, pattern = 'Input', include.dirs = TRUE, full.names = TRUE)
 control_files = vapply(control_folders, file.path, character(1), 'results.xprs')
 controls = sapply(control_files, read.table, sep = '\t', header = TRUE, simplify = FALSE)
 control_counts = `colnames<-`(sapply(controls, function (x) x$tot_counts), NULL)
+rownames(control_counts) = controls[[1]]$target_id
 ```
 
 Merge replicates by averaging.
