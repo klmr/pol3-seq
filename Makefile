@@ -37,7 +37,7 @@ ${trna_annotation}: ${trna_data}
 	tar xfz $< mm10-tRNAs.bed && mv mm10-tRNAs.bed $@
 	./scripts/fix-reference $@
 
-data/%.fa: data/%.bed
+data/%.fa: data/%.bed ${reference}
 	bedtools getfasta -name -fi ${reference} -bed $< -fo $@
 
 ${trna_prefix}.extended.bed: ${trna_annotation} ${genomesize}
