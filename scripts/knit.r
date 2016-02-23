@@ -132,7 +132,8 @@ melt = function (...) {
     else
         'variable'
 
-    result[, varnames] = as.character(result[, varnames])
+    # `sapply` since length(varnames) can be > 1.
+    result[, varnames] = sapply(result[, varnames], as.character)
     result
 }
 assign('melt', melt, globalenv())
