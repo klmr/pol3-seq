@@ -1,5 +1,6 @@
 # Filenames of data sources and result targets
 
+species = mouse
 genome = Mus_musculus.GRCm38.75
 reference = data/${genome}.dna.primary_assembly.fa
 sines_reference = data/repbase_sine_all.fasta

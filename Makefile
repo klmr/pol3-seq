@@ -16,6 +16,9 @@ include paths.make
 # Other parameters
 
 memlimit = 64000
+nthreads = 24
+
+include repeats.make
 
 # Rules to download data files
 
@@ -92,12 +95,6 @@ sines_index: ${sines_index}.1.ebwt
 ${sines_index}.1.ebwt: ${sines_reference}
 	mkdir -p ${index_path}
 	${bsub} -M 8000 -R 'rusage[mem=8000]' "${mkindex} --offrate 1 $< ${sines_index}"
-
-.PHONY: repeat_annotation
-repeat_annotation: ${repeat_annotation}
-
-${repeat_annotation}: ${repeat_annotation_repeatmasker}
-	${bsub} "gunzip -c $< | ${format_repeat_annotation} > $@"
 
 #${trna_annotation}: ${repeat_annotation}
 #	fgrep 'SINE/tRNA' $< > $@
