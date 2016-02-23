@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+infile="$1"
+outfile="$2"
+
+
+< "$infile" \
+    tail -n +4 \
+    | gawk -vOFS='\t' '{
+        strand = $9 == "C" ? "-" : "+"
+        class = $11
+
+        # Features according to SOFA.obo
+        switch (class) {
+            case /^SINE/: feature = "dispersed_repeat"; break;
+            case /^LINE/: feature = "dispersed_repeat"; break;
+            case /^LTR/: feature = "dispersed_repeat"; break;
+            case "tRNA": feature = "tRNA"; break;
+            case "rRNA": feature = "rRNA_primary_transcript"; break;
+            default: feature = "repeat_region";
+        }
+        print $5, "RepeatMasker", feature, $6, $7, $1, strand, ".", \
+            "Name=\"" $10 "\"; Derives_from=\"" class "\""
+    }' \
+    > "$outfile"

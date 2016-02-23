@@ -7,7 +7,6 @@
 mapper = bowtie
 mkindex = bowtie-build
 bsub = scripts/bsub -K
-format_repeat_annotation = src/gff-from-repeats
 
 folder = $(if $(realpath $1),,$1)
 
