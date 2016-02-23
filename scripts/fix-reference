@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Remove the prefix “chr” from chromosome references in either a BED or Fasta
+# file; this is necessary since the MM10 reference does not use this prefix;
+# however, some other tools and databases (notably GtRNAdb) produce files with
+# this prefix.
+
+filename="$1"
+
+case "$filename" in
+    *.bed)
+        sed --in-place='' 's/^chr//' "$filename"
+        ;;
+    *.fa)
+        sed --in-place='' --quiet '/^>/!p; /^>/s/(chr/(/p' "$filename"
+        ;;
+    *)
+        echo >&2 'ERROR: I do not know how to treat this file type'
+        return 1
+        ;;
+esac

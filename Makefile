@@ -9,67 +9,16 @@ mkindex = bowtie-build
 bsub = scripts/bsub -K
 format_repeat_annotation = src/gff-from-repeats
 
-#define folder =
-#	$(shell [[ -d $1 ]] || echo $1)
-#endef
-
 folder = $(if $(realpath $1),,$1)
 
-# Filenames of data sources and result targets
-
-genome = Mus_musculus.GRCm38.75
-reference = data/${genome}.dna.primary_assembly.fa
-nc_reference = data/${genome}.ncrna.fa
-sines_reference = data/repbase_sine_all.fasta
-index_prefix = $(notdir $(basename ${reference}))
-sines_index_prefix = $(notdir $(basename ${sines_reference}))
-index_path = data/${mapper}
-map_path = results/${mapper}
-sines_map_path = results/${mapper}/sines
-bigwig_path = ${map_path}
-sines_bigwig_path = ${sines_map_path}
-coverage_path = ${map_path}/coverage
-sines_coverage_path = ${sines_map_path}/express
-trna_coverage_path = ${coverage_path}/trna
-script_path = scripts
-report_path = results/report
-index = ${index_path}/${index_prefix}
-sines_index = ${index_path}/${sines_index_prefix}
-data_files := $(shell cat meta/library-files.txt)
-data_base = $(patsubst %/,%,$(dir $(word 1,${data_files})))
-mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data_files})))
-sines_mapped = $(addprefix ${sines_map_path}/,$(notdir ${mapped_reads}))
-genomesize = ${reference}.fai
-sines_size = ${sines_reference}.fai
-all_annotation = data/${genome}.gtf
-repeat_annotation = data/${genome}.repeats.gff
-trna_annotation = data/${genome}.repeats.sine.trna.gff
-line_annotation = data/${genome}.repeats.line.gff
-repeat_annotation_repeatmasker = data/combined_repeats.out.gz
-bigwig = $(patsubst %.bam,%.bw,${mapped_reads})
-sines_bigwig = $(patsubst %.bam,%.bw,${sines_mapped})
-coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
-sines_coverage = $(addprefix ${sines_coverage_path}/,$(patsubst %.bam,%.counts,$(notdir ${sines_mapped})))
-#trna_coverage = $(addprefix ${trna_coverage_path}/, $(patsubst %.bam,%.counts,$(notdir ${mapped_reads})))
-
-repeat_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_repeats.counts,$(notdir ${mapped_reads})))
-gene_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_genes.counts,$(notdir ${mapped_reads})))
-trna_coverage = $(addprefix ${coverage_path}/,$(patsubst %.bam,%_trnas.counts,$(notdir ${mapped_reads})))
-
-result_paths = $(sort \
-	${map_path} \
-	${bigwig_path} \
-	${coverage_path} \
-	${trna_coverage_path} \
-	${report_path} \
-	${sines_map_path} \
-	${sines_bigwig_path} \
-	${sines_coverage_path} \
-)
+include paths.make
 
 # Other parameters
 
 memlimit = 64000
+nthreads = 24
+
+include repeats.make
 
 # Rules to download data files
 
@@ -83,10 +32,45 @@ ${reference}:
 	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
 	gunzip $@.gz
 
-${nc_reference}:
+${trna_data}:
 	mkdir -p data
-	curl -o $@.gz 'ftp://ftp.ensembl.org/pub/release-79/fasta/mus_musculus/ncrna/Mus_musculus.GRCm38.ncrna.fa.gz'
-	gunzip $@.gz
+	curl -o $@ http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
+
+${trna_annotation}: ${trna_data}
+	tar xfz $< mm10-tRNAs.bed && mv mm10-tRNAs.bed $@
+	./scripts/fix-reference $@
+
+data/%.fa: data/%.bed ${reference}
+	bedtools getfasta -name -fi ${reference} -bed $< -fo $@
+
+${trna_prefix}.extended.bed: ${trna_annotation} ${genomesize}
+	bedtools slop -i $< -g ${genomesize} -b 100 > $@
+
+${trna_prefix}.flanking.bed: ${trna_annotation} ${genomesize}
+	bedtools flank -i $< -g ${genomesize} -b 100 > $@
+
+${trna_prefix}.bare.salmon_index: ${trna_reference}
+	salmon index --transcripts $< --index $@
+
+${trna_prefix}.%.salmon_index: ${trna_prefix}.%.fa
+	salmon index --transcripts $< --index $@
+
+.PRECIOUS: $(addprefix ${trna_prefix}.,$(addsuffix .fa,flanking extended))
+
+lib=$(shell grep "$1" meta/library-files.txt)
+
+define salmon=
+	${bsub} "$$SHELL -c 'salmon quant --index $2 --libType U -r <(gunzip -c $(call lib,$1)) -o $3'"
+endef
+
+results/salmon/trna-bare/%: ${trna_prefix}.bare.salmon_index
+	$(call salmon,$*,$<,$@)
+
+results/salmon/trna-flanking/%: ${trna_prefix}.flanking.salmon_index
+	$(call salmon,$*,$<,$@)
+
+results/salmon/trna-extended/%: ${trna_prefix}.extended.salmon_index
+	$(call salmon,$*,$<,$@)
 
 # Rules to build result files
 
@@ -101,26 +85,19 @@ index: ${index}.1.ebwt
 
 # This is inconvenient, since the index actually consists of multiple files,
 # which are numbered.
-${index}.1.ebwt: ${reference} ${index_path}
+${index}.1.ebwt: ${reference}
+	mkdir -p ${index_path}
 	${bsub} -M 16000 -R 'rusage[mem=16000]' "${mkindex} --offrate 3 $< ${index}"
 
 .PHONY: sines_index
 sines_index: ${sines_index}.1.ebwt
 
-${sines_index}.1.ebwt: ${sines_reference} ${index_path}
+${sines_index}.1.ebwt: ${sines_reference}
+	mkdir -p ${index_path}
 	${bsub} -M 8000 -R 'rusage[mem=8000]' "${mkindex} --offrate 1 $< ${sines_index}"
 
-${index_path}:
-	mkdir -p ${index_path}
-
-.PHONY: repeat_annotation
-repeat_annotation: ${repeat_annotation}
-
-${repeat_annotation}: ${repeat_annotation_repeatmasker}
-	${bsub} "gunzip -c $< | ${format_repeat_annotation} > $@"
-
-${trna_annotation}: ${repeat_annotation}
-	fgrep 'SINE/tRNA' $< > $@
+#${trna_annotation}: ${repeat_annotation}
+#	fgrep 'SINE/tRNA' $< > $@
 
 ${line_annotation}: ${repeat_annotation}
 	fgrep 'LINE' $< > $@
@@ -205,6 +182,3 @@ ${sines_coverage_path}/%.counts: ${sines_map_path}/%.bam ${sines_reference} ${si
 
 ${report_path}/%.html: ${script_path}/%.rmd ${report_path}
 	Rscript -e "knitr::knit2html('$<', '$@')"
-
-${result_paths}:
-	mkdir -p $@
