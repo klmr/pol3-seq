@@ -3,7 +3,6 @@
 infile="$1"
 outfile="$2"
 
-
 < "$infile" \
     tail -n +4 \
     | gawk -vOFS='\t' '{
@@ -19,7 +18,16 @@ outfile="$2"
             case "rRNA": feature = "rRNA_primary_transcript"; break;
             default: feature = "repeat_region";
         }
-        print $5, "RepeatMasker", feature, $6, $7, $1, strand, ".", \
-            "Name=\"" $10 "\"; Derives_from=\"" class "\""
+
+        # 100% - %substitutions - (%insertions + %deletions) / 2
+        # NB: insertions and substitutions are counted half because otherwise a
+        # bad alignment could cause a score < 0 (at most, #indels < 2 * #bp).
+        score = 100 - $2 - 0.5 * ($3 + $4)
+
+        # The range of the match inside the repeat consensus sequence
+        range = strand == "+" ? ($12 "-" $13) : ($14 "-" $13)
+
+        print $5, "RepeatMasker", feature, $6, $7, score, strand, ".", \
+            "Name=\"" $10 "\"; Derives_from=\"" class "\"; Range=\"" range "\""
     }' \
     > "$outfile"
