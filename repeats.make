@@ -14,6 +14,6 @@ ${rm_repeat_annotation}: ${reference}
 			-species ${species} -dir ${@D} $<
 
 ${repeat_annotation}: ${rm_repeat_annotation}
-	${bsub} "./scripts/repeat_masker_to_gtf $< $@"
+	${bsub} "./scripts/repeatmasker-to-gtf $< $@"
 
 # vim: ft=make
