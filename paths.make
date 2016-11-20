@@ -19,6 +19,8 @@ report_path = results/report
 index = ${index_path}/${index_prefix}
 sines_index = ${index_path}/${sines_index_prefix}
 data_files := $(shell cat meta/library-files.txt)
+# FIXME: Currently only a subset, use all.
+rna_data_files := $(shell cat meta/rna-library-files.txt)
 data_base = $(patsubst %/,%,$(dir $(word 1,${data_files})))
 mapped_reads = $(addprefix ${map_path}/,$(patsubst %.fq.gz,%.bam,$(notdir ${data_files})))
 sines_mapped = $(addprefix ${sines_map_path}/,$(notdir ${mapped_reads}))
