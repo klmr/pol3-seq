@@ -26,4 +26,12 @@ ${sine_annotation}: ${repeat_annotation}
 ${sine_reference}: ${sine_annotation}
 	${bsub} "./scripts/gtf-to-fasta $< ${reference} $@"
 
+sine_index = ${sine_reference:.fa=.salmon_index}
+
+.PHONY: sine-index
+sine-index: ${sine_index}
+
+${sine_index}: ${sine_reference}
+	salmon index --transcripts '$<' --index '$@'
+
 # vim: ft=make
