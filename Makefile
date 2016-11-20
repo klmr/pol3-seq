@@ -182,4 +182,6 @@ ${sines_coverage_path}/%.counts: ${sines_map_path}/%.bam ${sines_reference} ${si
 ${report_path}/%.html: ${script_path}/%.rmd ${report_path}
 	Rscript -e "knitr::knit2html('$<', '$@')"
 
+.DELETE_ON_ERROR:
+
 include make-help.make
