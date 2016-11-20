@@ -28,10 +28,19 @@ ${sine_reference}: ${sine_annotation}
 
 sine_index = ${sine_reference:.fa=.salmon_index}
 
+sine_quant = $(addprefix results/salmon/sine-bare/,$(patsubst %.fq.gz,%,$(notdir ${data_files})))
+
 .PHONY: sine-index
 sine-index: ${sine_index}
 
 ${sine_index}: ${sine_reference}
 	salmon index --transcripts '$<' --index '$@'
+
+.PHONY: sine-quant
+sine-quant: ${sine_quant}
+
+results/salmon/sine-bare/%: ~/nfs/data/trna/bianca/chip/%.fq.gz ${sine_index}
+	${bsub} -n8 -R'span[hosts=1]' -M12000 -R'select[mem>12000] rusage[mem=12000]' \
+		"$$SHELL -c 'salmon quant --index $(lastword $^) --libType U -r <(gunzip -c $<) -o $@'"
 
 # vim: ft=make
