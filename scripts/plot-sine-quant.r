@@ -31,6 +31,24 @@ data = coldata$File %>%
     mutate(MinPosInput = min(Input[Input != 0]),
            Value = PolIII / (Input + MinPosInput))
 
+rna_files = file.path(dir('results/salmon/sine-rna-bare', full.names = TRUE), 'quant.sf')
+
+rna_coldata = tibble(File = rna_files) %>%
+    extract(File, c('Tissue', 'Stage'), 'RNAseq_([[:alpha:]]+)_mmuBL6([^_]+)',
+            remove = FALSE) %>%
+    mutate(Stage = toupper(ifelse(Stage == 'Greece', 'e15.5', Stage))) %>%
+    filter(Tissue == 'liver', Stage %in% c('E15.5', 'P22'))
+
+rna_data = rna_coldata$File %>%
+    lapply(readr::read_tsv) %>%
+    Map(x ~ f -> mutate(x, Tissue = f$Tissue, Stage = f$Stage), .,
+        row_list(rna_coldata)) %>%
+    bind_rows() %>%
+    group_by(Tissue, Stage) %>%
+    mutate(ID = seq_len(n())) %>%
+    group_by(ID, Name, Tissue, Stage) %>%
+    summarize(Value = mean(TPM))
+
 library(ggplot2)
 
 theme_set(theme_minimal())
