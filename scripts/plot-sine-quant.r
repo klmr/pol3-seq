@@ -41,8 +41,6 @@ data %>%
     ggplot(aes(Name, Value)) +
     geom_text(aes(y = 0, label = Name), angle = 90, hjust = 0, size = 3, fontface = 'bold') +
     geom_bar(stat = 'identity') +
-    geom_text(aes(y = 0, label = Name), angle = 90, hjust = 0, size = 3, color = 'white') +
+    coord_flip() +
     facet_wrap(~ Stage) +
-    theme(axis.title.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.ticks.x = element_blank())
+    labs(x = 'SINE class', y = 'Ratio signal / input')
