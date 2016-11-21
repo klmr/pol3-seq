@@ -2,6 +2,10 @@
 # Recipes for the result files of the Pol III ChIP-seq analysis for repeat elements
 #
 
+# Helpers
+
+keep = $(foreach i,$2,$(if $(findstring $1,$i),$i))
+
 # Applications used
 
 mapper = bowtie
