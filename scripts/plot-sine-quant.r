@@ -1,11 +1,11 @@
-files = file.path(dir('results/salmon/sine-bare', full.names = TRUE), 'quant.sf')
-
 f = modules::import('klmr/functional')
 modules::import('klmr/functional/lambda')
 modules::import_package('dplyr', attach = TRUE)
 modules::import_package('tidyr', attach = TRUE)
 
-coldata = tibble(File = files) %>%
+chip_files = file.path(dir('results/salmon/sine-bare', full.names = TRUE), 'quant.sf')
+
+chip_coldata = tibble(File = chip_files) %>%
     extract(File, c('ChIP', 'Tissue', 'Stage'),
             'do\\d+_([[:alpha:]]+)_([[:alpha:]]+)_(?:[^_]*)_[Mm]mus?BL6([^_]+)',
             remove = FALSE) %>%
@@ -17,10 +17,10 @@ coldata = tibble(File = files) %>%
 row_list = function (df)
     lapply(seq_len(nrow(df)), i -> df[i, ])
 
-data = coldata$File %>%
+chip_data = chip_coldata$File %>%
     lapply(readr::read_tsv) %>%
     Map(x ~ f -> mutate(x, ChIP = f$ChIP, Tissue = f$Tissue, Stage = f$Stage),
-        ., row_list(coldata)) %>%
+        ., row_list(chip_coldata)) %>%
     bind_rows() %>%
     group_by(Tissue, Stage, ChIP) %>%
     mutate(ID = seq_len(n())) %>%
@@ -53,12 +53,12 @@ modules::import_package('ggplot2', attach = TRUE)
 
 theme_set(theme_minimal())
 
-summary = data %>%
+chip_summary = chip_data %>%
     group_by(Tissue, Stage, Name) %>%
     summarize(Value = sum(PolIII, na.rm = TRUE) / sum(Input)) %>%
     mutate(Name = reorder(Name, -Value))
 
-ggplot(summary, aes(Name, Value)) +
+ggplot(chip_summary, aes(Name, Value)) +
     geom_bar(stat = 'identity') +
     coord_flip() +
     facet_wrap(~ Stage) +
@@ -69,7 +69,7 @@ rna_summary = rna_data %>%
     summarize(Value = sum(Value)) %>%
     mutate(Name = reorder(Name, -Value))
 
-inner_join(summary, rna_summary, by = c('Name', 'Tissue', 'Stage')) %>%
+inner_join(chip_summary, rna_summary, by = c('Name', 'Tissue', 'Stage')) %>%
     ggplot(aes(Value.x, Value.y)) +
     geom_point() +
     geom_smooth(method = lm, se = FALSE) +
