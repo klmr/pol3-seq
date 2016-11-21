@@ -63,3 +63,16 @@ ggplot(summary, aes(Name, Value)) +
     coord_flip() +
     facet_wrap(~ Stage) +
     labs(x = 'SINE class', y = 'Ratio signal / input')
+
+rna_summary = rna_data %>%
+    group_by(Tissue, Stage, Name) %>%
+    summarize(Value = sum(Value)) %>%
+    mutate(Name = reorder(Name, -Value))
+
+inner_join(summary, rna_summary, by = c('Name', 'Tissue', 'Stage')) %>%
+    ggplot(aes(Value.x, Value.y)) +
+    geom_point() +
+    geom_smooth(method = lm, se = FALSE) +
+    scale_y_log10() +
+    labs(x = 'Pol III ChIP­seq', y = 'RNA-seq') +
+    facet_wrap(~ Stage, scales = 'free')
