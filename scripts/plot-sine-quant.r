@@ -35,11 +35,12 @@ library(ggplot2)
 
 theme_set(theme_minimal())
 
-data %>%
+summary = data %>%
     group_by(Tissue, Stage, Name) %>%
-    summarize(Value = sum(Value, na.rm = TRUE)) %>%
-    ggplot(aes(Name, Value)) +
-    geom_text(aes(y = 0, label = Name), angle = 90, hjust = 0, size = 3, fontface = 'bold') +
+    summarize(Value = sum(PolIII, na.rm = TRUE) / sum(Input)) %>%
+    mutate(Name = reorder(Name, -Value))
+
+ggplot(summary, aes(Name, Value)) +
     geom_bar(stat = 'identity') +
     coord_flip() +
     facet_wrap(~ Stage) +
