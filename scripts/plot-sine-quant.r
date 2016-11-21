@@ -2,8 +2,8 @@ files = file.path(dir('results/salmon/sine-bare', full.names = TRUE), 'quant.sf'
 
 f = modules::import('klmr/functional')
 modules::import('klmr/functional/lambda')
-library(dplyr)
-library(tidyr)
+modules::import_package('dplyr', attach = TRUE)
+modules::import_package('tidyr', attach = TRUE)
 
 coldata = tibble(File = files) %>%
     extract(File, c('ChIP', 'Tissue', 'Stage'),
@@ -49,7 +49,7 @@ rna_data = rna_coldata$File %>%
     group_by(ID, Name, Tissue, Stage) %>%
     summarize(Value = mean(TPM))
 
-library(ggplot2)
+modules::import_package('ggplot2', attach = TRUE)
 
 theme_set(theme_minimal())
 
