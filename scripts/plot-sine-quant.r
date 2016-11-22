@@ -71,11 +71,15 @@ chip_summary = chip_data %>%
     summarize(Value = sum(PolIII, na.rm = TRUE) / sum(Input)) %>%
     mutate(Name = reorder(Name, -Value))
 
-ggplot(chip_summary, aes(Name, Value)) +
-    geom_bar(stat = 'identity') +
-    coord_flip() +
-    facet_wrap(~ Stage) +
-    labs(x = 'SINE class', y = 'Ratio signal / input')
+ggplot(chip_summary, aes(Name, Value, fill = Stage)) +
+    geom_bar(stat = 'identity', position = 'dodge') +
+    labs(x = 'SINE class', y = 'Signal/input') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          panel.grid.major.x = element_blank()) +
+    scale_fill_manual(values = c('skyblue', 'orange'))
+
+ggsave('results/salmon/plots/chip-sine-expression-barchart.pdf',
+       width = 12, height = 7)
 
 rna_summary = rna_data %>%
     group_by(Tissue, Stage, Name) %>%
