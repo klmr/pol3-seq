@@ -86,6 +86,16 @@ rna_summary = rna_data %>%
     summarize(Value = sum(Value)) %>%
     mutate(Name = reorder(Name, -Value))
 
+ggplot(rna_summary, aes(Name, Value, fill = Stage)) +
+    geom_bar(stat = 'identity', position = 'dodge') +
+    labs(x = 'SINE class', y = 'Transcripts per million') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          panel.grid.major.x = element_blank()) +
+    scale_fill_manual(values = c('skyblue', 'orange'))
+
+ggsave('results/salmon/plots/rna-sine-expression-barchart.pdf',
+       width = 12, height = 7)
+
 inner_join(chip_summary, rna_summary, by = c('Name', 'Tissue', 'Stage')) %>%
     ggplot(aes(Value.x, Value.y)) +
     geom_point() +
