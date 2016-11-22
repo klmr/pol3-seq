@@ -51,7 +51,20 @@ rna_data = rna_coldata$File %>%
 
 modules::import_package('ggplot2', attach = TRUE)
 
-theme_set(theme_minimal())
+theme_set(theme_minimal() +
+          theme(panel.grid.minor = element_blank()))
+
+chip_data %>%
+    filter(Stage == 'E15.5') %>%
+    group_by(Name) %>%
+    summarize(Copies = n()) %>%
+    mutate(Name = reorder(Name, -Copies)) %>%
+    ggplot(aes(Name, Copies)) +
+    geom_bar(stat = 'identity') +
+    coord_flip() +
+    theme(panel.grid.major.y = element_blank())
+
+ggsave('results/salmon/plots/sine-element-numbers-barchart.pdf')
 
 chip_summary = chip_data %>%
     group_by(Tissue, Stage, Name) %>%
