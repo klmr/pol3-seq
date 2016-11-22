@@ -96,10 +96,29 @@ ggplot(rna_summary, aes(Name, Value, fill = Stage)) +
 ggsave('results/salmon/plots/rna-sine-expression-barchart.pdf',
        width = 12, height = 7)
 
-inner_join(chip_summary, rna_summary, by = c('Name', 'Tissue', 'Stage')) %>%
-    ggplot(aes(Value.x, Value.y)) +
+summary = inner_join(chip_summary, rna_summary, by = c('Name', 'Tissue', 'Stage'))
+
+models = summary %>%
+    split(.$Stage) %>%
+    purrr::map(~ lm(Value.y ~ Value.x, data = .)) %>%
+    purrr::map(base::summary)
+
+plot_correlation = function (stage) {
+    data = summary %>% filter(Stage == stage)
+    ggplot(data, aes(Value.x, Value.y, color = Stage)) +
     geom_point() +
     geom_smooth(method = lm, se = FALSE) +
     scale_y_log10() +
-    labs(x = 'Pol III ChIP­seq', y = 'RNA-seq') +
-    facet_wrap(~ Stage, scales = 'free')
+    labs(x = 'Pol III ChIP­seq', y = 'RNA­seq') +
+    annotate('text', x = min(data$Value.x), y = 1000, hjust = 0,
+             label = sprintf('R^2 == %0.2f', models[[stage]]$r.squared),
+             parse = TRUE) +
+    scale_color_manual(values = c('skyblue', 'orange'),
+                       limits = c('E15.5', 'P22'),
+                       guide = FALSE)
+}
+
+plot_correlation('E15.5')
+ggsave('results/salmon/plots/sine-rna-chip-correlation-E15.5-scatter.pdf', width = 5, height = 5)
+plot_correlation('P22')
+ggsave('results/salmon/plots/sine-rna-chip-correlation-P22-scatter.pdf', width = 5, height = 5)
