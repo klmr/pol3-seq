@@ -75,6 +75,11 @@ results/salmon/trna-flanking/%: ${trna_prefix}.flanking.salmon_index
 results/salmon/trna-extended/%: ${trna_prefix}.extended.salmon_index
 	$(call salmon,$*,$<,$@)
 
+results/salmon/trna-rna/%: ~/nfs/data/trna/bianca/rna/%p1.fq.gz ${trna_prefix}.bare.salmon_index
+	${bsub} -n8 -R'span[hosts=1]' -M12000 -R'select[mem>12000] rusage[mem=12000]' \
+		"$$SHELL -c 'salmon quant --index $(lastword $^) --libType A \
+		-1 <(gunzip -c $<) -2 <(gunzip -c $(subst p1,p2,$<)) -o $@'"
+
 # Rules to build result files
 
 data/${genome}.genes.bed: ${all_annotation}
