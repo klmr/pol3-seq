@@ -1,0 +1,16 @@
+/homes/rudolph/nfs/data/trna/bianca/rna/do1647_RNAseq_liver_mmuBL6e15.5_CRI01p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do1647_RNAseq_liver_mmuBL6e15.5_CRI01p2.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do1648_RNAseq_liver_mmuBL6P22_CRI01p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do1648_RNAseq_liver_mmuBL6P22_CRI01p2.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do1656_RNAseq_liver_mmuBL6P22_CRI02p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do1656_RNAseq_liver_mmuBL6P22_CRI02p2.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2170_RNAseq_liver_mmuBL6P22_CRI01p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2170_RNAseq_liver_mmuBL6P22_CRI01p2.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2172_RNAseq_liver_mmuBL6P22_CRI01p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2172_RNAseq_liver_mmuBL6P22_CRI01p2.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2178_RNAseq_liver_mmuBL6P22_CRI01p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2178_RNAseq_liver_mmuBL6P22_CRI01p2.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2180_RNAseq_liver_mmuBL6P22_CRI01p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do2180_RNAseq_liver_mmuBL6P22_CRI01p2.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do1474_RNAseq_liver_mmuBL6Greece_CRI01p1.fq.gz
+/homes/rudolph/nfs/data/trna/bianca/rna/do1474_RNAseq_liver_mmuBL6Greece_CRI01p2.fq.gz
