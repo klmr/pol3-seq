@@ -26,6 +26,13 @@ ${sine_annotation}: ${repeat_annotation}
 ${sine_reference}: ${sine_annotation}
 	${bsub} "./scripts/gtf-to-fasta $< ${reference} $@"
 
+repeat_reference = data/${genome}.repeats.fa
+.PRECIOUS: ${repeat_reference}
+${repeat_reference}: ${repeat_annotation}
+	${bsub} "./scripts/gtf-to-fasta $< ${reference} $@"
+
+# Conventional read mapping
+
 sine_index = ${sine_reference:.fa=.salmon_index}
 
 sine_quant = $(addprefix results/salmon/sine-bare/,$(patsubst %.fq.gz,%,$(notdir ${data_files})))
@@ -53,5 +60,22 @@ results/salmon/sine-rna-bare/%: ~/nfs/data/trna/bianca/rna/%p1.fq.gz ${sine_inde
 	${bsub} -n8 -R'span[hosts=1]' -M12000 -R'select[mem>12000] rusage[mem=12000]' \
 		"$$SHELL -c 'salmon quant --index $(lastword $^) --libType A \
 		-1 <(gunzip -c $<) -2 <(gunzip -c $(subst p1,p2,$<)) -o $@'"
+
+.PHONY: sine-mapped
+sine-mapped: ${sine_mapped}
+
+${sine_map_path}/%.bam: ${data_base}/%.fq.gz ${sine_index}
+	${bsub} -M ${memlimit} -n 32 -R 'select[gpfs]' -R 'rusage[mem=${memlimit}]' \
+		"./scripts/${happer} --best ${index} $< $@"
+
+# For comparison: RNA-seq against whole genome + feature counts on TEs.
+#
+# See sine-coverage/ subdirectory
+
+# FIXME:
+
+#SINE reference can only be used for flank-less alignment. Produce two additional references:
+#1. SINE gene body including flanks
+#2. SINE flanks, without gene body; annotate as pseudo exons in a transcript (how?!)
 
 # vim: ft=make
